@@ -7,7 +7,7 @@ export function startBot(token) {
   if (!token) return;
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-  client.once("ready", () => console.log(`🤖 Bot online als ${client.user.tag}`));
+  client.once("clientReady", () => console.log(`🤖 Bot online als ${client.user.tag}`));
 
   client.on("guildCreate", async (guild) => {
     try {

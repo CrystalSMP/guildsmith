@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3001;
 // Starten beendet die Wartung automatisch
 if (getMode().state === "maintenance") setMode({ state: "normal", ai: true, title: null, message: null });
 
-const server = spawn(process.execPath, ["--env-file=.env", "server.js"], { stdio: "inherit" });
+const server = spawn(process.execPath, ["--watch-path=server.js", "--watch-path=bot.js", "--watch-path=site.js", "--env-file=.env", "server.js"], { stdio: "inherit" });
 const tunnel = spawn("cloudflared", ["tunnel", "--url", `http://localhost:${PORT}`], { stdio: ["ignore", "pipe", "pipe"] });
 
 let done = false;
