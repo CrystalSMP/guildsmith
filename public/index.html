@@ -319,6 +319,73 @@
   .modal { background:rgba(0,0,0,.55); backdrop-filter:blur(6px); }
   .card { border-radius:20px; animation:pop .2s ease-out; }
   .banner { border-radius:12px; backdrop-filter:blur(10px); }
+  /* ===== Feature-Seiten ===== */
+  .fpage { padding:4px 4px 40px; }
+  .fpage > * { max-width:1100px; }
+  .fhead { display:flex; align-items:center; gap:14px; margin:6px 0 18px; flex-wrap:wrap; }
+  .fhead h2 { margin:0; font-size:24px; letter-spacing:-.02em; } .fhead p { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
+  .ficon { width:48px; height:48px; border-radius:14px; display:grid; place-items:center; font-size:22px; background:rgba(124,108,255,.14); border:1px solid rgba(124,108,255,.28); box-shadow:0 8px 30px -12px var(--glow); }
+  .fcard { background:var(--panel); backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:18px; padding:18px 20px; margin-bottom:14px; }
+  .fcard h4 { margin:0 0 12px; font-size:14px; }
+  .fld { display:block; margin-bottom:14px; } .fld > span { display:block; font-size:12.5px; font-weight:600; color:#c8c8d0; margin-bottom:6px; }
+  .fld small, small.muted, .muted { color:var(--muted); font-size:12px; display:block; margin-top:5px; }
+  .fld input, .fld select, .fld textarea, .rwd input, .rwd select {
+    width:100%; background:rgba(0,0,0,.35); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:inherit; outline:0; resize:vertical; }
+  .fld input:focus, .fld select:focus, .fld textarea:focus { border-color:rgba(124,108,255,.55); box-shadow:0 0 0 3px rgba(124,108,255,.12); }
+  .fld .pOpt { margin-bottom:6px; }
+  .factions { display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+  .factions button, .fhead > button { padding:10px 18px; border-radius:10px; font-weight:600; }
+  .sm2 { padding:6px 12px !important; border-radius:8px !important; font-size:12.5px; font-weight:600; }
+  .tgl { display:flex; align-items:center; gap:10px; cursor:pointer; margin:6px 0 12px; font-size:13.5px; }
+  .tgl input { display:none; }
+  .tgl i { width:38px; height:22px; border-radius:99px; background:#2a2a33; position:relative; transition:background .15s; flex:none; }
+  .tgl i::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; }
+  .tgl input:checked + i { background:linear-gradient(135deg,#7c6cff,#5865f2); box-shadow:0 0 14px var(--glow); }
+  .tgl input:checked + i::after { transform:translateX(16px); }
+  .fhead .tgl { margin:0; background:var(--panel); border:1px solid var(--line); padding:8px 14px; border-radius:12px; }
+  .fwarn { background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.3); color:#fde68a; border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:14px; }
+  .fnote { color:var(--muted); font-size:13px; padding:4px 4px; }
+  .rolepick { display:flex; flex-wrap:wrap; gap:6px; }
+  .rchip input { display:none; }
+  .rchip span { display:inline-block; padding:5px 12px; border-radius:99px; border:1px solid var(--line); font-size:13px; cursor:pointer; color:var(--c); background:rgba(0,0,0,.25); }
+  .rchip input:checked + span { background:color-mix(in srgb, var(--c) 22%, transparent); border-color:var(--c); color:#fff; }
+  .rwd { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; color:var(--muted); }
+  .rwd input { width:70px; } .rwd select { flex:1; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .item { padding:12px 0; border-bottom:1px solid var(--line); } .item:last-child { border-bottom:0; }
+  .item.flex { display:flex; align-items:center; gap:8px; }
+  .item .tag { margin-left:6px; }
+  .tag.live2 { background:rgba(34,197,94,.15); color:#4ade80; }
+  .pbar { display:grid; grid-template-columns:1fr 2fr 40px; gap:8px; align-items:center; font-size:12.5px; margin:6px 0; }
+  .pbar div { height:6px; background:rgba(255,255,255,.06); border-radius:99px; overflow:hidden; }
+  .pbar i { display:block; height:100%; background:linear-gradient(90deg,#7c6cff,#5865f2); }
+  .pbar small { color:var(--muted); text-align:right; }
+  .bars { display:flex; align-items:flex-end; gap:6px; height:180px; padding-top:10px; }
+  .bar { flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; }
+  .bar i { width:100%; min-height:2px; border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#8b7dff,#5865f2); box-shadow:0 0 16px -4px var(--glow); }
+  .bar small { color:var(--muted); font-size:10.5px; }
+  .tbl { width:100%; border-collapse:collapse; font-size:13px; }
+  .tbl th { text-align:left; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--line); }
+  .tbl td { padding:7px 8px; border-bottom:1px solid var(--line); } .tbl .g { color:#4ade80; } .tbl .r { color:#f87171; }
+  .lb { display:flex; flex-direction:column; gap:4px; max-height:460px; overflow:auto; }
+  .lbr { display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; }
+  .lbr:hover { background:rgba(255,255,255,.04); }
+  .lbr > b { width:22px; text-align:center; color:var(--muted); }
+  .lbr:nth-child(1) > b { color:#facc15; } .lbr:nth-child(2) > b { color:#d1d5db; } .lbr:nth-child(3) > b { color:#d97706; }
+  .lbr img, .lbr .av0 { width:32px; height:32px; border-radius:50%; background:#2a2a33; }
+  .lbr > div { flex:1; } .lbr small { color:var(--muted); text-align:right; font-size:11.5px; }
+  .xpbar { height:5px; background:rgba(255,255,255,.06); border-radius:99px; margin-top:5px; overflow:hidden; }
+  .xpbar i { display:block; height:100%; background:linear-gradient(90deg,#facc15,#f59e0b); }
+  .tgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+  .tcard { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:20px; display:flex; flex-direction:column; gap:6px; transition:transform .18s, border-color .18s; }
+  .tcard:hover { transform:translateY(-3px); border-color:rgba(124,108,255,.35); }
+  .temoji { font-size:30px; } .tcard b { font-size:16px; } .tcard p { color:var(--muted); font-size:13px; margin:0; flex:1; } .tcard small { color:#6f6f7b; }
+  .tcard button { margin-top:8px; padding:9px; border-radius:10px; font-weight:600; }
+  .feat.click { cursor:pointer; } .feat.click:hover { background:rgba(255,255,255,.03); }
+  .v2tag { font-size:9px; font-weight:700; border-radius:5px; padding:1px 5px; background:#3b2a6b; color:#c4b5fd; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(20,20,26,.95); border:1px solid rgba(34,197,94,.4); color:#bbf7d0; padding:10px 18px; border-radius:12px; z-index:20; animation:pop .2s; font-size:13.5px; box-shadow:0 10px 40px #000a; }
+  .toast.bad { border-color:rgba(239,68,68,.5); color:#fecaca; }
+  @media (max-width:1000px) { .row2 { grid-template-columns:1fr; } }
   @media (max-width: 1000px) {
     .app { grid-template-columns:1fr; height:auto; min-height:100vh; }
     .page.builder.on { grid-template-columns:1fr; } .two { grid-template-columns:1fr; }
@@ -382,23 +449,23 @@
 <div class="label">Haupt</div>
 <button class="nav" data-page="overview" data-label="Übersicht"><i>▦</i><span>Übersicht</span></button>
 <button class="nav" data-page="builder" data-label="AI Builder"><i>✦</i><span>AI Builder</span><span class="new">NEU</span></button>
-<button class="nav locked" data-page="locked" data-label="Bot-Profil"><i>🤖</i><span>Bot-Profil</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Server-Einstellungen"><i>⚙</i><span>Server-Einstellungen</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Statistiken"><i>📈</i><span>Statistiken</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Bot-Profil"><i>🤖</i><span>Bot-Profil</span><span class="v2tag">V2</span></button>
+<button class="nav" data-page="f:settings" data-label="Server-Einstellungen"><i>⚙</i><span>Server-Einstellungen</span></button>
+<button class="nav" data-page="f:stats" data-label="Statistiken"><i>📈</i><span>Statistiken</span></button>
 <div class="label">Willkommen</div>
-<button class="nav locked" data-page="locked" data-label="Willkommen"><i>👋</i><span>Willkommen</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Auto-Rollen"><i>🏷</i><span>Auto-Rollen</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Verifizierung"><i>✔</i><span>Verifizierung</span><span class="lock">🔒</span></button>
+<button class="nav" data-page="f:welcome" data-label="Willkommen"><i>👋</i><span>Willkommen</span></button>
+<button class="nav" data-page="f:autoroles" data-label="Auto-Rollen"><i>🏷</i><span>Auto-Rollen</span></button>
+<button class="nav" data-page="f:verify" data-label="Verifizierung"><i>✔</i><span>Verifizierung</span></button>
 <div class="label">Community</div>
-<button class="nav locked" data-page="locked" data-label="Tickets"><i>🎫</i><span>Tickets</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="XP & Level"><i>⭐</i><span>XP & Level</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Umfragen"><i>📊</i><span>Umfragen</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Giveaways"><i>🎁</i><span>Giveaways</span><span class="lock">🔒</span></button>
+<button class="nav" data-page="f:tickets" data-label="Tickets"><i>🎫</i><span>Tickets</span></button>
+<button class="nav" data-page="f:xp" data-label="XP & Level"><i>⭐</i><span>XP & Level</span></button>
+<button class="nav" data-page="f:polls" data-label="Umfragen"><i>📊</i><span>Umfragen</span></button>
+<button class="nav" data-page="f:giveaways" data-label="Giveaways"><i>🎁</i><span>Giveaways</span></button>
 <div class="label">Sicherheit</div>
-<button class="nav locked" data-page="locked" data-label="Auto-Moderation"><i>🛡</i><span>Auto-Moderation</span><span class="lock">🔒</span></button>
-<button class="nav locked" data-page="locked" data-label="Backups"><i>💾</i><span>Backups</span><span class="lock">🔒</span></button>
+<button class="nav" data-page="f:automod" data-label="Auto-Moderation"><i>🛡</i><span>Auto-Moderation</span></button>
+<button class="nav" data-page="f:backups" data-label="Backups"><i>💾</i><span>Backups</span></button>
 <div class="label">Vorlagen</div>
-<button class="nav locked" data-page="locked" data-label="Vorlagen"><i>🧩</i><span>Vorlagen</span><span class="lock">🔒</span></button>
+<button class="nav" data-page="f:templates" data-label="Vorlagen"><i>🧩</i><span>Vorlagen</span></button>
     </nav>
     <div class="foot"><a href="/auth/logout">Abmelden</a></div>
   </aside>
@@ -456,12 +523,15 @@
     </div>
 
     <!-- Gesperrt -->
+    <div class="page fpage" id="pFeature"></div>
+
     <div class="page" id="pLocked">
-      <div class="center" style="min-height:70vh"><div>
+      <div class="center" style="min-height:80vh"><div>
         <div class="lockbig">🔒</div>
-        <h1 id="lTitle">Gesperrt</h1>
-        <p>Diese Funktion ist noch gesperrt und kommt in einem späteren Update von Guildsmith.</p>
-        <button class="white tryai" data-go="builder" style="margin-top:20px">✦ Zum AI Builder</button>
+        <div class="eyebrow"><span></span>Kommt in V2</div>
+        <h1 id="lTitle" style="margin-top:14px">Bot-Profil</h1>
+        <p>Eigener Name, Avatar und Status für deinen Bot – das kommt mit <b>Guildsmith V2</b>.<br>Tritt unserem Discord bei und bewirb dich für den <b>Pre-Access</b>!</p>
+        <a class="discord" href="https://discord.gg/xebaUt2ky" target="_blank" rel="noopener">Discord beitreten & Pre-Access bewerben →</a>
       </div></div>
     </div>
   </main>
@@ -585,9 +655,10 @@ $("newChat").onclick = () => openGuild(guild, "builder");
 // ---------- Seiten / Navigation ----------
 function showPage(page, label) {
   document.querySelectorAll(".page").forEach((x) => x.classList.remove("on"));
-  $({ overview: "pOverview", builder: "pBuilder", locked: "pLocked" }[page]).classList.add("on");
-  document.querySelectorAll(".nav").forEach((n) => n.classList.toggle("on", n.dataset.page === page && (page !== "locked" || n.dataset.label === label)));
-  if (page === "locked") $("lTitle").textContent = `${label} ist gesperrt`;
+  const isF = page.startsWith("f:");
+  $(isF ? "pFeature" : { overview: "pOverview", builder: "pBuilder", locked: "pLocked" }[page]).classList.add("on");
+  document.querySelectorAll(".nav").forEach((n) => n.classList.toggle("on", n.dataset.page === page));
+  if (isF) window.renderFeature(page.slice(2));
   if (page === "overview") loadOverview();
   if (page === "builder") setTimeout(() => $("input").focus(), 50);
 }
@@ -610,10 +681,27 @@ async function loadOverview() {
       stat("🏷", "Rollen", o.roles) +
       stat("💎", "Boosts", o.boosts, `Level ${o.boostTier}`);
   } catch (e) { $("oSub").textContent = "Fehler: " + e.message; $("oStats").innerHTML = ""; }
-  const feats = [["✦", "AI Builder", true], ["🤖", "Bot-Profil"], ["👋", "Willkommen"], ["🎫", "Tickets"], ["⭐", "XP & Level"], ["🛡", "Auto-Moderation"], ["💾", "Backups"]];
-  $("oFeatures").innerHTML = feats.map(([i, n, on]) => `<div class="feat"><span>${i}</span><span>${n}</span>${on ? '<small>aktiv</small><span class="dot2 on"></span>' : '<small>🔒 gesperrt</small><span class="dot2"></span>'}</div>`).join("");
+  let cfg = {};
+  try { cfg = await window.featureStatus(); } catch {}
+  const feats = [["✦", "AI Builder", "builder", true], ["👋", "Willkommen", "f:welcome", cfg.welcome?.enabled], ["🏷", "Auto-Rollen", "f:autoroles", cfg.autoroles?.enabled],
+    ["✔", "Verifizierung", "f:verify", cfg.verify?.enabled], ["🎫", "Tickets", "f:tickets", cfg.tickets?.enabled], ["⭐", "XP & Level", "f:xp", cfg.xp?.enabled],
+    ["🛡", "Auto-Moderation", "f:automod", cfg.automod?.enabled], ["🤖", "Bot-Profil", "locked", null]];
+  $("oFeatures").closest(".box2").querySelector(".tag").textContent = `${feats.filter((f) => f[3]).length}/${feats.length}`;
+  $("oFeatures").innerHTML = feats.map(([i, n, pg, on]) => `<div class="feat click" data-pg="${pg}"><span>${i}</span><span>${n}</span>${on === null ? '<small>🔒 kommt in V2</small><span class="dot2"></span>' : on ? '<small>aktiv</small><span class="dot2 on"></span>' : '<small>aus</small><span class="dot2"></span>'}</div>`).join("");
+  $("oFeatures").querySelectorAll("[data-pg]").forEach((f) => (f.onclick = () => showPage(f.dataset.pg)));
   renderEngineList();
 }
+
+window.setPlanFromOutside = (p, title) => {
+  openGuild(guild, "builder");
+  plan = p; firstPrompt = p.summary || title;
+  addMsg("user", esc(title));
+  const chs = plan.categories.reduce((n, c) => n + (c.channels?.length || 0), 0);
+  addMsg("bot", `${esc(plan.summary || title)}
+    <div class="chips"><span class="chip">${plan.roles.length} Rollen</span><span class="chip">${plan.categories.length} Kategorien</span><span class="chip">${chs} Kanäle</span></div>
+    <div style="color:var(--muted);margin-top:8px;font-size:13px">Passt alles? Dann klick rechts auf <b>Build</b> – oder schreib, was ich ändern soll.</div>`);
+  renderPlan(); setStatus("Plan bereit", "var(--green)");
+};
 
 // ---------- Modelle ----------
 let engines = [{ key: "fast", label: "Guildsmith V1 Fast", desc: "Schnell, für die meisten Server" }], engine = "fast";
@@ -627,7 +715,7 @@ async function loadEngines() {
 function badge(e) { return e.locked ? '<span class="badge pro">PRO</span>' : e.beta ? '<span class="badge beta">BETA</span>' : ""; }
 function engineNote(e) { return e.locked ? "🔒 Gesperrt" : e.left != null ? `${e.left} von 1 heute übrig` : e.desc; }
 function renderPicker() {
-  const cur = engines.find((e) => e.key === engine) || engines[0];
+  const cur = engines.find((e) => e.key === engine) || engines[0] || { label: "V1 Fast" };
   $("modelBtn").innerHTML = `${esc(short(cur.label))} ⌃`;
   $("modelMenu").innerHTML = engines.map((e) => {
     const dis = e.locked || e.left === 0;
@@ -841,5 +929,6 @@ $("go").onclick = async () => {
 
 location.hostname.endsWith("github.io") ? onPages() : boot();
 </script>
+<script src="features-ui.js"></script>
 </body>
 </html>

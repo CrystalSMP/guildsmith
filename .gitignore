@@ -3,3 +3,4 @@ node_modules/
 .claude/
 mode.json
 usage.json
+data.json

@@ -1,11 +1,18 @@
 // Discord-Bot: schickt eine Willkommensnachricht, wenn Guildsmith einem Server beitritt.
+import { setupFeatures } from "./features.js";
 import { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } from "discord.js";
 
 const PAGES_URL = process.env.PAGES_URL || "https://crystalsmp.github.io/guildsmith";
 
-export function startBot(token) {
+export function startBot(token, full = true) {
   if (!token) return;
-  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  // Volle Features brauchen "Server Members Intent" + "Message Content Intent" im Developer Portal
+  const intents = full
+    ? [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+    : [GatewayIntentBits.Guilds];
+  const client = new Client({ intents });
+  client.fullIntents = full;
+  setupFeatures(client, full);
 
   client.once("clientReady", () => console.log(`🤖 Bot online als ${client.user.tag}`));
 
@@ -40,5 +47,13 @@ export function startBot(token) {
     }
   });
 
-  client.login(token).catch((e) => console.log("⚠ Bot-Login fehlgeschlagen:", e.message));
+  client.login(token).catch((e) => {
+    if (full && /disallowed intents/i.test(e.message)) {
+      console.log("⚠ Intents fehlen: Developer Portal → Bot → 'Server Members Intent' und 'Message Content Intent' einschalten.");
+      console.log("  Bis dahin laufen Willkommen, Auto-Rollen, XP, Auto-Mod und Statistiken NICHT.");
+      client.destroy();
+      return startBot(token, false);
+    }
+    console.log("⚠ Bot-Login fehlgeschlagen:", e.message);
+  });
 }
