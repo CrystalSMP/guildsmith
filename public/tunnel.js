@@ -1,2 +1,2 @@
-window.TUNNEL_URL = "https://jane-academic-camcorders-even.trycloudflare.com";
+window.TUNNEL_URL = "";
 window.SITE = {"state":"normal","ai":true,"title":null,"message":null};
