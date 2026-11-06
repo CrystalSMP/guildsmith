@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Guildsmith</title>
+<style>body{margin:0;background:#0b0b0c;color:#8b8b92;font:14px system-ui;display:grid;place-items:center;height:100vh}</style>
+<script>document.write('<script src="tunnel.js?v=' + Date.now() + '"><\/script>')</script>
+</head><body>Anmeldung wird abgeschlossen…
+<script>
+  // Discord schickt den Login hierher (feste Adresse) – weiter zum aktuellen Tunnel.
+  if (window.TUNNEL_URL) location.replace(window.TUNNEL_URL + "/auth/callback" + location.search);
+  else location.replace("./");
+</script>
+</body></html>

@@ -21,6 +21,10 @@ const onData = (buf) => {
 tunnel.stdout.on("data", onData);
 tunnel.stderr.on("data", onData);
 
-const stop = () => { tunnel.kill(); server.kill(); process.exit(); };
+const stop = () => {
+  // Tunnel-URL entfernen, damit GitHub Pages nicht auf einen toten Tunnel leitet
+  if (done) { console.log("Beende… (Status wird aktualisiert)"); publish(setMode({ url: "" })); }
+  tunnel.kill(); server.kill(); process.exit();
+};
 process.on("SIGINT", stop);
 server.on("exit", stop);
