@@ -88,6 +88,7 @@
   .step.todo { color:#4a4a50; }
   .spin { width:12px; height:12px; border:2px solid #444; border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; display:block; }
   @keyframes spin { to { transform:rotate(360deg); } }
+  .retry { color:var(--yellow); font-size:12.5px; margin-top:6px; }
   .elapsed { color:#5d5d63; font-size:11px; margin-top:4px; }
   @keyframes b { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
   .composer { padding:0 max(24px, calc(50% - 360px)) 18px; }
@@ -375,6 +376,14 @@ async function streamAI(url, body, onProgress) {
 
 const STEPS = ["understand", "summary", "roles", "channels", "check"];
 function renderSteps(el, p, revise) {
+  if (p.step === "retry") {
+    let n = el.parentElement.querySelector(".retry");
+    if (!n) { n = document.createElement("div"); n.className = "retry"; el.after(n); }
+    n.textContent = `⏳ Gerade viel los – neuer Versuch ${p.attempt}/${p.max} in ${p.wait} s…`;
+    setStatus("Warte auf freie KI…", "var(--yellow)");
+    return;
+  }
+  el.parentElement.querySelector(".retry")?.remove();
   const cur = STEPS.indexOf(p.step);
   const label = {
     understand: revise ? "Lese deine Änderung" : "Verstehe deine Anfrage",

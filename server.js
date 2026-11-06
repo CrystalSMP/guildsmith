@@ -81,26 +81,34 @@ function progressOf(text) {
 }
 
 async function ask(messages, onProgress = () => {}) {
-  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  // Bei Überlastung automatisch neu versuchen, danach optional Ersatzmodell
+  const models = [process.env.GEMINI_MODEL || "gemini-3.8-flash", process.env.GEMINI_FALLBACK_MODEL].filter(Boolean);
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+    generationConfig: { responseMimeType: "application/json" },
+  });
   onProgress({ step: "understand" });
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
-    {
+  const TRIES = 5;
+  let r, attempt = 0;
+  for (;;) {
+    const model = models[Math.min(Math.floor(attempt / TRIES), models.length - 1)];
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: messages.map((m) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
-        })),
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    }
-  );
-  if (!r.ok) {
+      body,
+    });
+    if (r.ok) break;
     const d = await r.json().catch(() => ({}));
-    throw new Error(d.error?.message || d[0]?.error?.message || "KI-Fehler");
+    const msg = d.error?.message || d[0]?.error?.message || "KI-Fehler";
+    attempt++;
+    if (![429, 500, 503].includes(r.status) || attempt >= TRIES * models.length) {
+      throw new Error(r.status === 503 || r.status === 429 ? "Guildsmith ist gerade stark ausgelastet. Bitte versuch es in ein paar Minuten nochmal." : msg);
+    }
+    const wait = Math.min(2 ** (attempt % TRIES || TRIES), 20);
+    onProgress({ step: "retry", attempt, max: TRIES * models.length, wait });
+    await new Promise((ok) => setTimeout(ok, wait * 1000));
+    onProgress({ step: "understand" });
   }
   let text = "", buf = "";
   const dec = new TextDecoder();
