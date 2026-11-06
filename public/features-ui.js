@@ -235,7 +235,7 @@
         </div>`;
       el.innerHTML = head("⚡", "Custom Bots", "Beschreib, was dein Bot automatisch tun soll – Guildsmith baut ihn für dich. Nur Discord-Sachen.") + warnIntents() + card("Neuer Custom Bot", `
         <div class="cbask"><textarea id="cbIn" placeholder="z.B. Lösch jeden Tag um 3 Uhr den Kanal #memes und erstell ihn neu"></textarea><button class="white" id="cbGo" style="padding:12px 18px;border-radius:12px;font-weight:700">✦ Erstellen</button></div>
-        <div class="cbex">${["Jeden Tag um 3 Uhr #allgemein leeren", "Wenn jemand !regeln schreibt, die Regeln posten", "Neue Mitglieder bekommen eine DM mit Infos", "Jeden Montag 18 Uhr Event-Erinnerung posten", "Wer „discord.gg“ schreibt, 10 Min. stummschalten", "Alle 30 Min. Kanalname auf Mitgliederzahl setzen"].map((x) => `<button>${x}</button>`).join("")}</div>
+        <div class="cbex">${["Jeden Tag um 3 Uhr #allgemein leeren", "Wenn jemand !regeln schreibt, die Regeln posten", "Neue Mitglieder bekommen eine DM mit Infos", "Jeden Montag 18 Uhr Event-Erinnerung posten", "/regeln Befehl, der die Regeln zeigt", "Wer „discord.gg“ schreibt, 10 Min. stummschalten", "Alle 30 Min. Kanalname auf Mitgliederzahl setzen"].map((x) => `<button>${x}</button>`).join("")}</div>
         <div id="cbOut"></div>`) + card(`Deine Custom Bots <span class="tag">${list.length}/25</span>`, list.length ? list.map((a) => cardHtml(a)).join("") : `<div class="empty">Noch keine Custom Bots.</div>`);
 
       el.querySelectorAll(".cbex button").forEach((b) => (b.onclick = () => { $("cbIn").value = b.textContent; $("cbIn").focus(); }));

@@ -11,6 +11,7 @@ const TRIGGERS = {
   member_join: "Wenn jemand dem Server beitritt",
   member_leave: "Wenn jemand den Server verlässt",
   message: "Wenn eine Nachricht geschrieben wird ({contains}, {startsWith} oder {equals} – optional {channel})",
+  slash_command: "Eigener Slash-Befehl, z.B. /regeln ({command} nur kleine Buchstaben/Zahlen/-, OHNE /, {description} kurz auf Deutsch). Für ALLE Wünsche mit /befehl immer diesen Auslöser nehmen!",
 };
 const ACTIONS = {
   send_message: "Nachricht in Kanal senden ({channel}, {text})",
@@ -27,7 +28,7 @@ const ACTIONS = {
   rename_channel: "Kanal umbenennen ({channel}, {name})",
 };
 const NEEDS_USER = new Set(["reply", "dm_user", "add_role", "remove_role", "timeout_user", "delete_message"]);
-const NEEDS_MESSAGE = new Set(["reply", "delete_message"]);
+const NEEDS_MESSAGE = new Set(["delete_message"]);
 
 export function automationPrompt(meta) {
   return `Du baust "Custom Bots" für Discord-Server. Der Nutzer beschreibt auf Deutsch, was sein Bot automatisch tun soll.
@@ -40,7 +41,8 @@ AKTIONEN (actions[].type), werden der Reihe nach ausgeführt:
 ${Object.entries(ACTIONS).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
 
 Platzhalter in Texten/Namen: {user} (Erwähnung), {name}, {server}, {count} (Mitgliederzahl), {date}, {time}.
-Aktionen mit Nutzer/Nachricht (reply, dm_user, add_role, remove_role, timeout_user, delete_message) gehen nur bei member_join/member_leave/message.
+Aktionen mit Nutzer (reply, dm_user, add_role, remove_role, timeout_user) gehen nur bei member_join/member_leave/message/slash_command.
+delete_message geht nur bei message. Bei slash_command ist reply die Antwort auf den Befehl (optional {private}: true = nur für den Nutzer sichtbar).
 
 KANÄLE dieses Servers (id: name): ${meta.channels.map((c) => `${c.id}: ${c.type === 2 ? "🔊" : "#"}${c.name}`).join(", ") || "keine"}
 KATEGORIEN: ${meta.categories.map((c) => `${c.id}: ${c.name}`).join(", ") || "keine"}
@@ -74,11 +76,18 @@ export function validateAutomation(a, meta) {
     if (t.channel && ch.has(t.channel)) trigger.channel = t.channel;
     if (!trigger.contains && !trigger.startsWith && !trigger.equals) throw new Error("Bei Nachrichten-Auslösern fehlt der Text, auf den reagiert werden soll.");
   }
-  const withUser = ["member_join", "member_leave", "message"].includes(t.type);
+  if (t.type === "slash_command") {
+    const cmd = String(t.command || "").toLowerCase().replace(/^\//, "").replace(/[^a-z0-9_-]/g, "").slice(0, 32);
+    if (!cmd) throw new Error("Der Befehl braucht einen Namen.");
+    trigger.command = cmd;
+    trigger.description = String(t.description || "Custom Befehl").slice(0, 100);
+  }
+  const withUser = ["member_join", "member_leave", "message", "slash_command"].includes(t.type);
   const actions = (a.actions || []).slice(0, 8).map((x) => {
     if (!ACTIONS[x.type]) throw new Error(`Unbekannte Aktion „${x.type}“.`);
     if (NEEDS_USER.has(x.type) && !withUser) throw new Error(`„${x.type}“ geht nur, wenn ein Nutzer etwas auslöst.`);
     if (NEEDS_MESSAGE.has(x.type) && t.type !== "message") throw new Error(`„${x.type}“ geht nur bei Nachrichten.`);
+    if (x.type === "reply" && !["message", "slash_command"].includes(t.type)) throw new Error("Antworten geht nur bei Nachrichten oder /Befehlen.");
     const o = { type: x.type };
     if ("channel" in x || ["send_message", "clear_channel", "recreate_channel", "delete_channel", "rename_channel"].includes(x.type)) {
       if (!ch.has(x.channel)) throw new Error("Ein Kanal aus der Automation existiert nicht.");
@@ -90,6 +99,7 @@ export function validateAutomation(a, meta) {
     if (x.name != null) o.name = String(x.name).slice(0, 90);
     if (x.type === "create_channel") { o.type2 = x.type2 === "voice" || x.channelType === "voice" || x.kind === "voice" ? "voice" : "text"; if (x.category && cat.has(x.category)) o.category = x.category; if (!o.name) throw new Error("Neuer Kanal braucht einen Namen."); }
     if (x.type === "rename_channel" && !o.name) throw new Error("Neuer Kanalname fehlt.");
+    if (x.type === "reply" && x.private) o.private = true;
     if (x.type === "timeout_user") o.minutes = Math.max(1, Math.min(10080, Number(x.minutes) || 10));
     return o;
   });
@@ -118,7 +128,12 @@ async function runActions(client, guild, auto, ctx = {}) {
       const ch = a.channel ? await guild.channels.fetch(a.channel).catch(() => null) : null;
       switch (a.type) {
         case "send_message": await ch?.send(fillText(a.text, ctx)); break;
-        case "reply": await ctx.message?.reply(fillText(a.text, ctx)); break;
+        case "reply":
+          if (ctx.interaction) {
+            const payload = { content: fillText(a.text, ctx), ephemeral: !!a.private };
+            if (ctx.interaction.replied || ctx.interaction.deferred) await ctx.interaction.followUp(payload); else await ctx.interaction.reply(payload);
+          } else await ctx.message?.reply(fillText(a.text, ctx));
+          break;
         case "dm_user": await ctx.user?.send(fillText(a.text, ctx)); break;
         case "add_role": await ctx.member?.roles.add(a.role); break;
         case "remove_role": await ctx.member?.roles.remove(a.role); break;
@@ -153,6 +168,10 @@ async function runActions(client, guild, auto, ctx = {}) {
       log.push(`✗ ${a.type}: ${e.message}`);
     }
   }
+  // Slash-Befehl ohne eigene Antwort: kurz bestätigen, sonst zeigt Discord "Die Anwendung reagiert nicht"
+  if (ctx.interaction && !ctx.interaction.replied && !ctx.interaction.deferred) {
+    await ctx.interaction.reply({ content: log.some((l) => l.startsWith("✗")) ? "⚠️ Das hat nicht ganz geklappt." : "✅ Erledigt!", ephemeral: true }).catch(() => {});
+  }
   const g = guildData(guild.id);
   const stored = g.automations.find((x) => x.id === auto.id);
   if (stored) { stored.lastRun = Date.now(); stored.runs = (stored.runs || 0) + 1; stored.lastLog = log; saveData(); }
@@ -168,7 +187,29 @@ function replaceChannelId(gid, oldId, newId) {
   saveData();
 }
 
+// Slash-Befehle eines Servers bei Discord registrieren (überschreibt nur Guildsmith-Befehle)
+let botClient = null;
+export async function syncCommands(gid) {
+  if (!botClient?.isReady()) return;
+  const cmds = new Map();
+  for (const a of guildData(gid).automations)
+    if (a.enabled && a.trigger.type === "slash_command" && !cmds.has(a.trigger.command))
+      cmds.set(a.trigger.command, { name: a.trigger.command, description: a.trigger.description || "Custom Befehl", type: 1 });
+  try {
+    await botClient.application.commands.set([...cmds.values()], gid);
+  } catch (e) { console.log("⚠ Slash-Befehle:", e.message); }
+}
+
 export function setupAutomations(client, full, allGuildIds) {
+  botClient = client;
+  client.once("clientReady", () => { for (const gid of allGuildIds()) if (client.guilds.cache.has(gid)) syncCommands(gid); });
+  client.on("interactionCreate", async (i) => {
+    if (!i.isChatInputCommand() || !i.guild) return;
+    const a = guildData(i.guild.id).automations.find((x) => x.enabled && x.trigger.type === "slash_command" && x.trigger.command === i.commandName);
+    if (!a) return i.reply({ content: "Dieser Befehl ist nicht mehr aktiv.", ephemeral: true }).catch(() => {});
+    runActions(client, i.guild, a, { guild: i.guild, member: i.member, user: i.user, interaction: i }).catch(() => {});
+  });
+
   // Zeit-Auslöser: alle 30 Sekunden prüfen
   setInterval(() => {
     const now = new Date();
@@ -223,11 +264,12 @@ export function describe(a, meta) {
     weekly: `Jeden ${days[t.day]} um ${t.time} Uhr`,
     member_join: "Wenn jemand beitritt",
     member_leave: "Wenn jemand geht",
+    slash_command: `Befehl /${t.command}${t.description ? ` – ${t.description}` : ""}`,
     message: `Wenn eine Nachricht ${t.equals ? `„${t.equals}“ ist` : t.startsWith ? `mit „${t.startsWith}“ beginnt` : `„${t.contains}“ enthält`}${t.channel ? ` in ${chn(t.channel)}` : ""}`,
   }[t.type];
   const what = a.actions.map((x) => ({
     send_message: `💬 Nachricht in ${chn(x.channel)}: „${x.text}“`,
-    reply: `↩ Antworten: „${x.text}“`,
+    reply: `↩ Antworten${x.private ? " (nur für den Nutzer)" : ""}: „${x.text}“`,
     dm_user: `✉ DM: „${x.text}“`,
     add_role: `➕ Rolle ${rol(x.role)} geben`,
     remove_role: `➖ Rolle ${rol(x.role)} nehmen`,

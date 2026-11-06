@@ -1,7 +1,7 @@
 // Alle Dashboard-Features: Bot-Logik + API-Routen.
 // Daten liegen in data.json (pro Server).
 import { readFileSync, writeFileSync } from "node:fs";
-import { setupAutomations, automationPrompt, validateAutomation, describe, runActions } from "./automations.js";
+import { setupAutomations, automationPrompt, validateAutomation, describe, runActions, syncCommands } from "./automations.js";
 import {
   EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits,
 } from "discord.js";
@@ -447,7 +447,10 @@ export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, h
     if (g.automations.length >= 25) return res.status(400).json({ error: "Maximal 25 Custom Bots pro Server." });
     const item = { id: Date.now().toString(36), enabled: true, created: Date.now(), ...a,
       lastRun: a.trigger.type === "interval" ? Date.now() : 0 };
+    if (a.trigger.type === "slash_command" && g.automations.some((x) => x.trigger.command === a.trigger.command))
+      return res.status(400).json({ error: `Den Befehl /${a.trigger.command} gibt es schon.` });
     g.automations.push(item); save();
+    await syncCommands(req.params.id);
     res.json(view(item, meta));
   }));
   app.patch(R("automations/:aid"), requireAuth, wrap(async (req, res) => {
@@ -455,11 +458,13 @@ export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, h
     if (!a) return res.status(404).json({ error: "Nicht gefunden." });
     if ("enabled" in req.body) a.enabled = !!req.body.enabled;
     save();
+    if (a.trigger.type === "slash_command") await syncCommands(req.params.id);
     res.json({ ok: true });
   }));
   app.delete(R("automations/:aid"), requireAuth, wrap(async (req, res) => {
     const g = guildData(req.params.id);
     g.automations = g.automations.filter((x) => x.id !== req.params.aid); save();
+    await syncCommands(req.params.id);
     res.json({ ok: true });
   }));
   app.post(R("automations/:aid/run"), requireAuth, wrap(async (req, res) => {
