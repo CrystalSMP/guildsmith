@@ -67,7 +67,9 @@ function parseJson(text) {
     .replace(/,\s*([}\]])/g, "$1")
     .replace(/}\s*{/g, "},{")
     .replace(/([}\]"\d]|true|false|null)(\s*\n\s*")/g, "$1,$2");
-  return JSON.parse(fixed);
+  try { return JSON.parse(fixed); } catch {}
+  // Schlüssel ohne Anführungszeichen (title: "…") reparieren
+  return JSON.parse(fixed.replace(/([{,]\s*)([A-Za-z_][\w]*)\s*:/g, '$1"$2":'));
 }
 
 // Fortschritt aus dem halb fertigen JSON lesen (was plant die KI gerade?)
