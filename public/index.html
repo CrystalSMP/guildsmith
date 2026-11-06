@@ -56,12 +56,14 @@
     <pre id="log" class="hidden"></pre>
   </div>
 </main>
+<script src="config.js"></script>
 <script>
+const API = location.hostname.endsWith("github.io") ? window.API_BASE : "";
 const $ = (id) => document.getElementById(id);
 let plan = null;
 
 async function post(url, body) {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(API + url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) throw new Error(d.error);
   return d;
@@ -95,9 +97,9 @@ $("reloadBtn").onclick = () => loadGuilds();
 
 async function loadGuilds() {
   try {
-    const gs = await (await fetch("/api/guilds")).json();
+    const gs = await (await fetch(API + "/api/guilds")).json();
     $("guild").innerHTML = gs.length ? gs.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join("") : "<option value=''>Bot ist auf keinem Server</option>";
-    $("invite").href = (await (await fetch("/api/invite")).json()).url;
+    $("invite").href = (await (await fetch(API + "/api/invite")).json()).url;
   } catch (e) { alert(e.message); }
 }
 
@@ -105,7 +107,7 @@ $("buildBtn").onclick = () => busy($("buildBtn"), async () => {
   if (!$("guild").value) throw new Error("Erst den Bot einladen.");
   if ($("wipe").checked && !confirm("Wirklich ALLE Kanäle und Rollen löschen?")) return;
   const log = $("log"); log.textContent = ""; log.classList.remove("hidden");
-  const r = await fetch("/api/build", { method: "POST", headers: { "Content-Type": "application/json" },
+  const r = await fetch(API + "/api/build", { method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ guildId: $("guild").value, plan, wipe: $("wipe").checked }) });
   const reader = r.body.getReader(), dec = new TextDecoder();
   for (;;) { const { done, value } = await reader.read(); if (done) break; log.textContent += dec.decode(value); log.scrollTop = 1e9; }
