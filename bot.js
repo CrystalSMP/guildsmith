@@ -8,8 +8,8 @@ export function startBot(token, full = true) {
   if (!token) return;
   // Volle Features brauchen "Server Members Intent" + "Message Content Intent" im Developer Portal
   const intents = full
-    ? [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
-    : [GatewayIntentBits.Guilds];
+    ? [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildModeration]
+    : [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildModeration];
   const client = new Client({ intents });
   client.fullIntents = full;
   setupFeatures(client, full);

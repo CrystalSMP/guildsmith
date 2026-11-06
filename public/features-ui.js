@@ -348,6 +348,9 @@
       ] } },
   ];
 
+  // Für weitere Seiten (features2-ui.js)
+  window.GS = { api, toast, run, field, toggle, head, card, warnIntents, warnBot, chOpts, catOpts, roleOpts, val, chk, saveCfg, PAGES, meta: () => meta, config: () => config };
+
   window.renderFeature = async (key) => {
     const el = $("pFeature");
     el.innerHTML = `<div class="empty" style="margin-top:80px"><i class="spin" style="display:inline-block"></i></div>`;

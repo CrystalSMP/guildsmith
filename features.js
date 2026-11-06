@@ -1,6 +1,7 @@
 // Alle Dashboard-Features: Bot-Logik + API-Routen.
 // Daten liegen in data.json (pro Server).
 import { readFileSync, writeFileSync } from "node:fs";
+import { DEFAULTS2, setupFeatures2, registerFeatures2 } from "./features2.js";
 import { setupAutomations, automationPrompt, validateAutomation, describe, runActions, syncCommands, materialize } from "./automations.js";
 import {
   EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits,
@@ -21,13 +22,14 @@ const DEFAULTS = {
   xp: { enabled: false, channel: "", message: "🎉 {user} ist jetzt **Level {level}**!", rewards: [] },
   automod: { enabled: false, invites: true, links: false, caps: false, words: [], logChannel: "" },
 };
+Object.assign(DEFAULTS, DEFAULTS2);
 
 export const saveData = () => save();
 
 export function guildData(id) {
   const g = (db[id] ||= {});
   for (const [k, v] of Object.entries(DEFAULTS)) g[k] = { ...structuredClone(v), ...(g[k] || {}) };
-  g.xpUsers ||= {}; g.stats ||= {}; g.polls ||= {}; g.giveaways ||= {}; g.backups ||= []; g.automations ||= [];
+  g.xpUsers ||= {}; g.stats ||= {}; g.polls ||= {}; g.giveaways ||= {}; g.backups ||= []; g.automations ||= []; g.selfroles ||= [];
   return g;
 }
 
@@ -54,6 +56,7 @@ let client = null;
 export function setupFeatures(c, full) {
   client = c;
   setupAutomations(c, full, () => Object.keys(db));
+  setupFeatures2(c, full, guildData, save);
   if (full) {
     c.on("guildMemberAdd", async (m) => {
       stat(m.guild.id, "joins");
@@ -218,12 +221,15 @@ export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, h
   };
   const R = (path) => `/api/guild/:id/${path}`;
 
+  registerFeatures2(app, { requireAuth, wrap, R, needBot, guildData, save });
+
   // Kanäle & Rollen für Auswahlfelder
   app.get(R("meta"), requireAuth, wrap(async (req, res) => {
     const [channels, roles] = await Promise.all([discord("GET", `/guilds/${req.params.id}/channels`), discord("GET", `/guilds/${req.params.id}/roles`)]);
     res.json({
       text: channels.filter((c) => c.type === 0 || c.type === 5).sort((a, b) => a.position - b.position).map((c) => ({ id: c.id, name: c.name })),
       categories: channels.filter((c) => c.type === 4).map((c) => ({ id: c.id, name: c.name })),
+      voice: channels.filter((c) => c.type === 2).sort((a, b) => a.position - b.position).map((c) => ({ id: c.id, name: c.name })),
       roles: roles.filter((r) => r.id !== req.params.id && !r.managed).sort((a, b) => b.position - a.position).map((r) => ({ id: r.id, name: r.name, color: r.color })),
       botOnline: !!client?.isReady(),
       intents: !!client?.fullIntents,
