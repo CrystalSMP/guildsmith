@@ -82,28 +82,41 @@ function progressOf(text) {
 
 async function ask(messages, onProgress = () => {}) {
   // Bei Überlastung automatisch neu versuchen, danach optional Ersatzmodell
-  const models = [process.env.GEMINI_MODEL || "gemini-3.8-flash", ...(process.env.GEMINI_FALLBACK_MODEL || "").split(",")].map((m) => m.trim()).filter(Boolean);
-  const body = JSON.stringify({
+  const models = [process.env.GEMINI_MODEL || "gemini-3.6-flash", ...(process.env.GEMINI_FALLBACK_MODEL || "").split(",")].map((m) => m.trim()).filter(Boolean);
+  // Wenig "Nachdenken" = viel schneller (Standard: minimal)
+  const thinking = process.env.GEMINI_THINKING ?? "minimal";
+  const makeBody = (withThinking) => JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM }] },
     contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-    generationConfig: { responseMimeType: "application/json" },
+    generationConfig: { responseMimeType: "application/json", ...(withThinking && thinking ? { thinkingConfig: { thinkingLevel: thinking } } : {}) },
   });
   onProgress({ step: "understand" });
   const TRIES = 2; // Versuche pro Modell, danach nächstes Ersatzmodell
+  const noThinking = new Set();
   let r, attempt = 0;
   for (;;) {
     const model = models[Math.min(Math.floor(attempt / TRIES), models.length - 1)];
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-      body,
-    });
-    if (r.ok) break;
-    const d = await r.json().catch(() => ({}));
-    const msg = d.error?.message || d[0]?.error?.message || "KI-Fehler";
+    let status, msg;
+    try {
+      // Antwortet ein Modell 25 s lang gar nicht, gilt es als überlastet
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+        body: makeBody(!noThinking.has(model)),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (r.ok) break;
+      const d = await r.json().catch(() => ({}));
+      status = r.status;
+      msg = d.error?.message || d[0]?.error?.message || "KI-Fehler";
+    } catch {
+      status = 503; msg = "Zeitüberschreitung";
+    }
+    // Modell kennt diese Denk-Stufe nicht -> ohne nochmal
+    if (status === 400 && /thinking/i.test(msg) && !noThinking.has(model)) { noThinking.add(model); continue; }
     attempt++;
-    if (![429, 500, 503].includes(r.status) || attempt >= TRIES * models.length) {
-      throw new Error(r.status === 503 || r.status === 429 ? "Guildsmith ist gerade stark ausgelastet. Bitte versuch es in ein paar Minuten nochmal." : msg);
+    if (![429, 500, 503].includes(status) || attempt >= TRIES * models.length) {
+      throw new Error(status === 503 || status === 429 ? "Guildsmith ist gerade stark ausgelastet. Bitte versuch es in ein paar Minuten nochmal." : msg);
     }
     const wait = attempt % TRIES ? 3 : 1; // kurz warten, beim Modellwechsel fast sofort
     onProgress({ step: "retry", attempt, max: TRIES * models.length, wait });
