@@ -1,2 +1,2 @@
 window.TUNNEL_URL = "";
-window.SITE = {"state":"maintenance","ai":false,"title":"🛠️ Wartung","message":"Guildsmith wird gerade gewartet. Schau gleich nochmal vorbei!"};
+window.SITE = {"state":"normal","ai":true,"title":null,"message":null};
