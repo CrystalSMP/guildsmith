@@ -239,12 +239,14 @@ async function onPages() {
   if (s.state === "maintenance") return statusPage(s.title || "🛠️ Wartung", s.message || "Guildsmith wird gerade gewartet.", "Wartung", "var(--yellow)");
   if (window.TUNNEL_URL) {
     const alive = await fetch(window.TUNNEL_URL + "/api/health", { signal: AbortSignal.timeout(5000) }).then((r) => r.ok).catch(() => false);
-    if (alive) return location.replace(window.TUNNEL_URL);
+    if (alive) return location.replace(window.TUNNEL_URL + location.search);
   }
   statusPage(s.title || "Guildsmith", s.message || "Guildsmith ist gerade nicht erreichbar. Schau später nochmal vorbei.", "Offline", "var(--red)");
 }
 
 // ---------- App ----------
+const wanted = new URLSearchParams(location.search).get("guild");
+try { if (wanted) sessionStorage.setItem("guild", wanted); } catch {}
 async function boot() {
   try { mode = await (await fetch("/api/mode")).json(); } catch {}
   if (mode.state === "maintenance") return statusPage(mode.title, mode.message, "Wartung", "var(--yellow)");
@@ -264,6 +266,10 @@ async function showServers(fresh) {
     if (!r.ok) throw new Error(d.error);
     guilds = d.sort((a, b) => b.installed - a.installed);
     renderGuilds();
+    let want = null;
+    try { want = sessionStorage.getItem("guild"); sessionStorage.removeItem("guild"); } catch {}
+    const g = guilds.find((x) => x.id === want && x.installed);
+    if (g) { history.replaceState(null, "", "/"); openGuild(g); }
   } catch (e) { $("gCount").textContent = "Fehler: " + e.message; }
 }
 

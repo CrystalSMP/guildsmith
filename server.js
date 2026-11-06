@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { getMode } from "./site.js";
+import { startBot } from "./bot.js";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -63,7 +64,7 @@ function parseJson(text) {
 }
 
 async function ask(messages) {
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
   const r = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -315,4 +316,5 @@ app.post("/api/build", requireAuth, async (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
+startBot(TOKEN);
 app.listen(port, () => console.log(`Läuft auf http://localhost:${port}`));
