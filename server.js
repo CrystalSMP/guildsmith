@@ -259,10 +259,40 @@ async function hasV2(uid, fresh) {
     if (!v2RoleId) v2RoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === V2_ROLE)?.id;
     const m = await discord("GET", `/guilds/${V2_GUILD}/members/${uid}`);
     ok = !!v2RoleId && m.roles.includes(v2RoleId);
+    if (ok) markTester(uid, m.roles);
   } catch {} // nicht auf dem Server = kein Zugang
   v2Cache.set(uid, { ok, at: Date.now() });
   return ok;
 }
+
+// ---------- Pre-Tester: wer während der Beta V2 hatte, bleibt es für immer ----------
+const TESTER_ROLE = process.env.TESTER_ROLE_NAME || "⭐ Pre-Tester";
+let testers = {};
+try { testers = JSON.parse(rf("testers.json", "utf8")); } catch {}
+let testerRoleId = null;
+const isTester = (uid) => !!testers[uid];
+async function markTester(uid, roles = []) {
+  if (!testers[uid]) {
+    testers[uid] = { since: new Date().toISOString() };
+    wf("testers.json", JSON.stringify(testers, null, 2));
+    console.log("⭐ Neuer Pre-Tester:", uid);
+  }
+  try {
+    if (!testerRoleId) testerRoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === TESTER_ROLE)?.id;
+    if (testerRoleId && !roles.includes(testerRoleId)) await discord("PUT", `/guilds/${V2_GUILD}/members/${uid}/roles/${testerRoleId}`);
+  } catch (e) { console.log("⚠ Pre-Tester-Rolle:", e.message); }
+}
+// Beim Start alle aktuellen V2-Mitglieder als Pre-Tester eintragen
+async function syncTesters() {
+  if (!V2_GUILD) return;
+  try {
+    if (!v2RoleId) v2RoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === V2_ROLE)?.id;
+    const members = await discord("GET", `/guilds/${V2_GUILD}/members?limit=1000`);
+    for (const m of members) if (v2RoleId && m.roles.includes(v2RoleId)) await markTester(m.user.id, m.roles);
+  } catch (e) { console.log("⚠ Pre-Tester-Abgleich:", e.message); }
+}
+setTimeout(syncTesters, 3000);
+setInterval(syncTesters, 10 * 60000);
 
 async function pickEngine(req, res) {
   const key = req.body.engine || "fast";
@@ -391,7 +421,7 @@ function requireAuth(req, res, next) {
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.get("/api/me", requireAuth, async (req, res) => {
   const u = req.sess.user;
-  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id, req.query.fresh === "1") });
+  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id, req.query.fresh === "1"), tester: isTester(u.id) });
 });
 
 const MANAGE = (1n << 3n) | (1n << 5n); // ADMINISTRATOR oder MANAGE_GUILD

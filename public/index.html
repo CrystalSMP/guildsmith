@@ -387,6 +387,24 @@
   .bban { height:110px; background:linear-gradient(135deg,#7c6cff,#5865f2) center/cover; }
   .bava { width:84px; height:84px; border-radius:50%; border:6px solid #111214; margin:-42px 0 0 16px; display:block; object-fit:cover; background:#111214; }
   .bbody { padding:6px 16px 18px; } .bbody b { font-size:18px; } .bbody p { color:var(--muted); font-size:13px; margin:8px 0 0; white-space:pre-wrap; }
+  /* Pre-Tester */
+  .ptbadge { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; margin-right:8px;
+    color:#1a1205; background:linear-gradient(135deg,#ffe08a,#f5b82e 50%,#d4890f); box-shadow:0 0 14px rgba(245,184,46,.45); white-space:nowrap; }
+  .brand .ptbadge { margin:3px 0 0; font-size:9.5px; padding:1px 7px; }
+  .brand > div:last-child { display:flex; flex-direction:column; align-items:flex-start; }
+  .goldtgl { font-size:12.5px; margin:0 0 10px; color:var(--muted); }
+  body.gold { --brand:#f5b82e; --brand2:#d4890f; --glow:rgba(245,184,46,.42); }
+  body.gold { background:
+      radial-gradient(900px 500px at 15% -10%, rgba(245,184,46,.15), transparent 60%),
+      radial-gradient(700px 500px at 110% 10%, rgba(212,137,15,.10), transparent 60%), var(--bg); background-attachment:fixed; }
+  body.gold .box { border-color:rgba(245,184,46,.3); box-shadow:0 0 0 1px rgba(245,184,46,.08), 0 10px 60px -20px var(--glow); }
+  body.gold .box:focus-within { border-color:rgba(245,184,46,.6); box-shadow:0 0 0 4px rgba(245,184,46,.12), 0 14px 70px -18px var(--glow); }
+  body.gold .msg.user .bubble { background:linear-gradient(135deg, rgba(245,184,46,.2), rgba(212,137,15,.1)); border-color:rgba(245,184,46,.3); }
+  body.gold .discord, body.gold .qopt.on, body.gold .tgl input:checked + i, body.gold .bar i, body.gold .pbar i { background:linear-gradient(135deg,#ffe08a,#f5b82e,#d4890f); color:#1a1205; }
+  body.gold .ficon, body.gold .eyebrow { background:rgba(245,184,46,.12); border-color:rgba(245,184,46,.3); color:#fde68a; }
+  body.gold .center h1, body.gold .hello h1 span:last-child, body.gold .servers h2 { background:linear-gradient(180deg,#fff 30%,#fcd34d); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  body.gold .spin { border-top-color:#f5b82e; }
+  body.gold .ideas .tip:hover, body.gold .g:hover { border-color:rgba(245,184,46,.45); }
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(20,20,26,.95); border:1px solid rgba(34,197,94,.4); color:#bbf7d0; padding:10px 18px; border-radius:12px; z-index:20; animation:pop .2s; font-size:13.5px; box-shadow:0 10px 40px #000a; }
   .toast.bad { border-color:rgba(239,68,68,.5); color:#fecaca; }
   @media (max-width:1000px) { .row2 { grid-template-columns:1fr; } }
@@ -589,6 +607,7 @@ async function boot() {
   if (r.status === 401) return show("vLogin");
   const me = await r.json();
   window.ME = me;
+  applyTester(me);
   const bp = document.querySelector('[data-label="Bot-Profil"]');
   if (me.v2) { bp.dataset.page = "f:botprofile"; bp.classList.remove("locked"); bp.querySelector(".v2tag").textContent = "V2 ✓"; }
   $("userBox").innerHTML = `${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : ""}${esc(me.name)}<a href="/auth/logout">Abmelden</a>`;
@@ -659,6 +678,24 @@ const hello = $("hello");
 $("switchBtn").onclick = () => showServers();
 $("newChat").onclick = () => openGuild(guild, "builder");
 
+// ---------- Pre-Tester: Abzeichen + Gold-Design ----------
+function applyTester(me) {
+  document.querySelectorAll(".ptbadge, .goldtgl").forEach((x) => x.remove());
+  if (!me.tester) { document.body.classList.remove("gold"); return; }
+  const badge = '<span class="ptbadge" title="Du warst bei der V2-Beta dabei – das bleibt für immer.">⭐ Pre-Tester</span>';
+  $("userBox").insertAdjacentHTML("afterbegin", badge);
+  document.querySelector(".brand > div:last-child").insertAdjacentHTML("beforeend", badge);
+  let gold = true;
+  try { gold = localStorage.getItem("gold") !== "0"; } catch {}
+  document.body.classList.toggle("gold", gold);
+  document.querySelector(".side .foot").insertAdjacentHTML("afterbegin",
+    `<label class="tgl goldtgl"><input type="checkbox" ${gold ? "checked" : ""}><i></i><span>Gold-Design</span></label>`);
+  document.querySelector(".goldtgl input").onchange = (e) => {
+    document.body.classList.toggle("gold", e.target.checked);
+    try { localStorage.setItem("gold", e.target.checked ? "1" : "0"); } catch {}
+  };
+}
+
 // ---------- Seiten / Navigation ----------
 function showPage(page, label) {
   document.querySelectorAll(".page").forEach((x) => x.classList.remove("on"));
@@ -674,7 +711,7 @@ document.querySelectorAll(".nav").forEach((n) => (n.onclick = async () => {
   if (n.dataset.label === "Bot-Profil" && n.dataset.page === "locked") {
     try {
       const me = await (await fetch("/api/me?fresh=1")).json();
-      if (me.v2) { window.ME = me; n.dataset.page = "f:botprofile"; n.classList.remove("locked"); n.querySelector(".v2tag").textContent = "V2 ✓"; loadEngines(); }
+      if (me.v2) { window.ME = me; applyTester(me); n.dataset.page = "f:botprofile"; n.classList.remove("locked"); n.querySelector(".v2tag").textContent = "V2 ✓"; loadEngines(); }
     } catch {}
   }
   showPage(n.dataset.page, n.dataset.label);
