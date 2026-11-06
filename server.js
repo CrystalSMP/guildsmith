@@ -1,4 +1,5 @@
 import express from "express";
+import { getMode } from "./site.js";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -81,6 +82,13 @@ async function ask(messages) {
   if (!r.ok) throw new Error(d.error?.message || "Gemini Fehler");
   return parseJson(d.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "");
 }
+
+app.get("/api/mode", (_req, res) => res.json(getMode()));
+app.use(["/api/plan", "/api/revise"], (_req, res, next) => {
+  const m = getMode();
+  if (!m.ai) return res.status(503).json({ error: m.message || "Die KI ist gerade pausiert." });
+  next();
+});
 
 // Neuer Plan aus Prompt
 app.post("/api/plan", async (req, res) => {

@@ -1,8 +1,11 @@
 // Startet Guildsmith lokal + Cloudflare-Tunnel und leitet die GitHub-Pages-Seite darauf um.
-import { spawn, execSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { getMode, setMode, publish } from "./site.js";
 
 const PORT = process.env.PORT || 3000;
+// Starten beendet die Wartung automatisch
+if (getMode().state === "maintenance") setMode({ state: "normal", ai: true, title: null, message: null });
+
 const server = spawn(process.execPath, ["--env-file=.env", "server.js"], { stdio: "inherit" });
 const tunnel = spawn("cloudflared", ["tunnel", "--url", `http://localhost:${PORT}`], { stdio: ["ignore", "pipe", "pipe"] });
 
@@ -12,13 +15,8 @@ const onData = (buf) => {
   if (!m || done) return;
   done = true;
   console.log(`\n🌐 Tunnel: ${m[0]}`);
-  writeFileSync("public/tunnel.js", `window.TUNNEL_URL = "${m[0]}";\n`);
-  try {
-    execSync('git add public/tunnel.js && git commit -q -m "Tunnel-URL aktualisiert" && git push -q', { stdio: "inherit" });
-    console.log("✅ GitHub Pages leitet in ca. 1 Minute auf den Tunnel weiter.\n");
-  } catch {
-    console.log("⚠ Konnte Tunnel-URL nicht pushen (git/gh Login prüfen).\n");
-  }
+  const ok = publish(setMode({ url: m[0] }));
+  console.log(ok ? "✅ GitHub Pages leitet in ca. 1 Minute auf den Tunnel weiter.\n" : "⚠ Konnte Tunnel-URL nicht pushen (git Login prüfen).\n");
 };
 tunnel.stdout.on("data", onData);
 tunnel.stderr.on("data", onData);

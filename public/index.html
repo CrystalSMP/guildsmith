@@ -97,6 +97,8 @@
   .white { background:#fff; color:#000; }
   .invite { display:block; text-align:center; background:var(--blurple); color:#fff; border-radius:10px; padding:9px; text-decoration:none; font-weight:600; margin-top:10px; }
 
+  .banner { margin:12px 12px 0; padding:10px 14px; border-radius:10px; background:#1e293b; border:1px solid #334155; font-size:13px; }
+  .banner.warn { background:#3a2a0a; border-color:#78530f; }
   @media (max-width: 1000px) {
     .app { grid-template-columns:1fr; grid-template-rows:auto 1fr auto; height:auto; min-height:100vh; }
     .side { display:none; } .chat { min-height:70vh; } .plan { max-height:60vh; }
@@ -156,9 +158,30 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 let plan = null, firstPrompt = "", tab = "ch", busy = false;
 
-if (location.hostname.endsWith("github.io") && !window.TUNNEL_URL) {
-  document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;text-align:center"><div><h1>⚒️ Guildsmith</h1><p style="color:#8b8b92">Gerade offline – der Host-PC ist nicht an.</p></div></div>';
+// Status: Wartung / KI pausiert / Hinweis
+async function applySite() {
+  let m = window.SITE || {};
+  if (!location.hostname.endsWith("github.io")) {
+    try { m = await (await fetch("/api/mode")).json(); } catch {}
+  }
+  if (m.state === "maintenance") {
+    document.body.innerHTML = `<div style="display:grid;place-items:center;height:100vh;padding:16px;text-align:center"><div>
+      <div class="logo" style="width:56px;height:56px;font-size:28px;margin:0 auto 16px">⚒</div>
+      <h1 style="margin:0 0 8px">${esc(m.title)}</h1><p style="color:var(--muted);margin:0">${esc(m.message)}</p></div></div>`;
+    return;
+  }
+  if (m.title || m.message) {
+    const b = document.createElement("div");
+    b.className = "banner " + (m.state === "ai-off" ? "warn" : "");
+    b.innerHTML = `<b>${esc(m.title)}</b> ${esc(m.message)}`;
+    document.querySelector(".chat").prepend(b);
+  }
+  if (m.ai === false) {
+    $("input").disabled = true;
+    $("input").placeholder = "Die KI ist gerade pausiert.";
+  }
 }
+applySite();
 const h = new Date().getHours();
 $("greet").textContent = h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend";
 
