@@ -167,10 +167,43 @@ async function ask(messages, onProgress = () => {}, engine = ENGINES.fast) {
 }
 
 app.get("/api/mode", (_req, res) => res.json(getMode()));
-app.use(["/api/plan", "/api/revise"], requireAuth, (_req, res, next) => {
+app.use(["/api/plan", "/api/revise", "/api/questions"], requireAuth, (_req, res, next) => {
   const m = getMode();
   if (!m.ai) return res.status(503).json({ error: m.message || "Die KI ist gerade pausiert." });
   next();
+});
+
+// ---------- Rückfragen vor dem Planen ----------
+const Q_SYSTEM = `Du hilfst, einen Discord-Server zu planen. Der Nutzer beschreibt kurz seinen Server.
+Stelle 2 bis 3 kurze Rückfragen auf Deutsch, die den Plan deutlich besser machen (z.B. Größe, Sprache, Stil, wichtige Bereiche) –
+aber nur Dinge, die NICHT schon in der Beschreibung stehen. Jede Frage hat 2 bis 4 kurze Antwortmöglichkeiten (max. 5 Wörter).
+Antworte NUR mit JSON: {"questions":[{"q":"Frage?","options":["A","B","C"],"multi":false}]}
+multi=true nur, wenn mehrere Antworten sinnvoll sind. Ist die Beschreibung schon sehr genau, gib {"questions":[]} zurück.`;
+
+app.post("/api/questions", async (req, res) => {
+  const prompt = String(req.body.prompt || "").slice(0, 2000);
+  for (const model of ENGINES.fast.models) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: Q_SYSTEM }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" },
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const out = parseJson(d.candidates?.[0]?.content?.parts?.map((x) => x.text || "").join("") || "");
+      const questions = (out.questions || []).slice(0, 3)
+        .filter((q) => q.q && Array.isArray(q.options) && q.options.length)
+        .map((q) => ({ q: String(q.q), options: q.options.slice(0, 4).map(String), multi: !!q.multi }));
+      return res.json({ questions });
+    } catch {}
+  }
+  res.json({ questions: [] }); // Fragen sind optional – lieber direkt planen als abbrechen
 });
 
 // Antwort als NDJSON streamen: {type:"progress",...} … {type:"done",plan} oder {type:"error"}

@@ -135,6 +135,14 @@
   .spin { width:12px; height:12px; border:2px solid #444; border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; display:block; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .retry { color:var(--yellow); font-size:12.5px; margin-top:6px; }
+  .qbox { background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:14px 16px !important; }
+  .q { margin-top:12px; } .q small { color:var(--muted); }
+  .qopts { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .qopt { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:99px; padding:5px 12px; font-size:13px; }
+  .qopt:hover { border-color:#4a4a50; } .qopt.on { background:#fff; color:#000; border-color:#fff; }
+  .qown { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:99px; padding:5px 12px; font:inherit; font-size:13px; outline:0; width:150px; }
+  .qbtns { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+  .qbtns button { padding:8px 14px; border-radius:10px; font-weight:600; }
   .elapsed { color:#5d5d63; font-size:11px; margin-top:4px; }
   @keyframes b { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
   .composer { padding:0 max(24px, calc(50% - 360px)) 18px; }
@@ -526,6 +534,51 @@ async function post(url, body) {
   return d;
 }
 
+// Rückfragen: Fragen holen und als Antwort-Buttons zeigen
+async function askQuestions(prompt, thinking) {
+  let qs = [];
+  try {
+    const r = await fetch("/api/questions", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ prompt }) });
+    if (r.ok) qs = (await r.json()).questions || [];
+  } catch {}
+  if (!qs.length) return [];
+  const box = document.createElement("div");
+  box.className = "msg bot";
+  box.innerHTML = `<div class="logo av">⚒</div><div class="bubble qbox">
+    <div style="margin-bottom:6px">Kurz ein paar Fragen, damit dein Server richtig gut wird:</div>
+    ${qs.map((q, i) => `<div class="q" data-i="${i}"><b>${esc(q.q)}</b>${q.multi ? '<small> · mehrere möglich</small>' : ""}
+      <div class="qopts">${q.options.map((o) => `<button class="qopt">${esc(o)}</button>`).join("")}
+      <input class="qown" placeholder="Eigene Antwort…"></div></div>`).join("")}
+    <div class="qbtns"><button class="ghost qskip">Überspringen</button><button class="white qgo">Weiter →</button></div></div>`;
+  thinking.closest(".msg").before(box);
+  thinking.closest(".msg").style.display = "none";
+  $("msgs").scrollTop = 1e9;
+  setStatus("Wartet auf deine Antworten", "var(--blurple)");
+  box.querySelectorAll(".q").forEach((qel) => {
+    const multi = qs[qel.dataset.i].multi;
+    qel.querySelectorAll(".qopt").forEach((b) => (b.onclick = () => {
+      if (!multi) qel.querySelectorAll(".qopt").forEach((x) => x !== b && x.classList.remove("on"));
+      b.classList.toggle("on");
+    }));
+  });
+  const answers = await new Promise((done) => {
+    box.querySelector(".qskip").onclick = () => done([]);
+    box.querySelector(".qgo").onclick = () => done(qs.map((q, i) => {
+      const el = box.querySelector(`.q[data-i="${i}"]`);
+      const picked = [...el.querySelectorAll(".qopt.on")].map((b) => b.textContent);
+      const own = el.querySelector(".qown").value.trim();
+      if (own) picked.push(own);
+      return { q: q.q, a: picked.join(", ") };
+    }).filter((x) => x.a));
+  });
+  box.querySelectorAll("button, input").forEach((x) => (x.disabled = true));
+  box.querySelector(".qbtns").remove();
+  thinking.closest(".msg").style.display = "";
+  $("msgs").append(thinking.closest(".msg"));
+  $("msgs").scrollTop = 1e9;
+  return answers;
+}
+
 // KI-Antwort live lesen (NDJSON: progress … done)
 async function streamAI(url, body, onProgress) {
   const r = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) });
@@ -596,9 +649,16 @@ async function send() {
   const timer = setInterval(() => { thinking.querySelector(".elapsed").textContent = `${Math.round((Date.now() - t0) / 1000)} s`; }, 500);
   try {
     const revise = !!plan;
-    if (!revise) firstPrompt = text;
+    let full = text;
+    if (!revise) {
+      // Erst Rückfragen stellen, dann planen
+      thinking.querySelector(".steps").innerHTML = '<div class="step now"><span><i class="spin"></i></span>Überlege Rückfragen</div>';
+      const answers = await askQuestions(text, thinking);
+      if (answers.length) full = text + "\n\nZusätzliche Infos:\n" + answers.map((a) => `- ${a.q} ${a.a}`).join("\n");
+      firstPrompt = full;
+    }
     plan = await streamAI(revise ? "/api/revise" : "/api/plan",
-      revise ? { prompt: firstPrompt, plan, change: text, engine } : { prompt: text, engine },
+      revise ? { prompt: firstPrompt, plan, change: text, engine } : { prompt: full, engine },
       (p) => renderSteps(thinking.querySelector(".steps"), p, revise));
     clearInterval(timer);
     if (!revise) loadEngines();
