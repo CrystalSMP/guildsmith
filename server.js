@@ -61,7 +61,13 @@ Maximal 15 Rollen, 10 Kategorien, 40 Kanäle.`;
 function parseJson(text) {
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) throw new Error("AI hat kein JSON geliefert");
-  return JSON.parse(m[0]);
+  try { return JSON.parse(m[0]); } catch {}
+  // Kleine KI-Fehler reparieren: Kommentare, Kommas zu viel/zu wenig
+  const fixed = m[0]
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/}\s*{/g, "},{")
+    .replace(/([}\]"\d]|true|false|null)(\s*\n\s*")/g, "$1,$2");
+  return JSON.parse(fixed);
 }
 
 // Fortschritt aus dem halb fertigen JSON lesen (was plant die KI gerade?)
@@ -105,7 +111,20 @@ function addUse(uid, engine) {
   wf("usage.json", JSON.stringify(all, null, 2));
 }
 
-async function ask(messages, onProgress = () => {}, engine = ENGINES.fast) {
+// Kaputtes JSON? Bis zu 2× neu fragen, dabei das nächste Modell zuerst nehmen
+async function ask(messages, onProgress = () => {}, engine = ENGINES.fast, tries = 0) {
+  try {
+    return await askOnce(messages, onProgress, engine);
+  } catch (e) {
+    if (!(e instanceof SyntaxError) && !/kein JSON/.test(e.message)) throw e;
+    if (tries >= 2) throw new Error("Die KI hat zweimal einen fehlerhaften Plan geliefert. Bitte nochmal versuchen.");
+    onProgress({ step: "retry", attempt: tries + 1, max: 2, wait: 0 });
+    const m = engine.models;
+    return ask(messages, onProgress, { ...engine, models: [...m.slice(1), m[0]] }, tries + 1);
+  }
+}
+
+async function askOnce(messages, onProgress = () => {}, engine = ENGINES.fast) {
   // Bei Überlastung automatisch neu versuchen, danach optional Ersatzmodell
   const models = engine.models;
   // Wenig "Nachdenken" = viel schneller (Standard: minimal)
