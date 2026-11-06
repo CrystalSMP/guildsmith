@@ -252,6 +252,8 @@ async function onPages() {
     if (alive) return location.replace(window.TUNNEL_URL + location.search);
   }
   statusPage(s.title || "Guildsmith", s.message || "Guildsmith ist gerade nicht erreichbar. Schau später nochmal vorbei.", "Offline", "var(--red)");
+  // Automatisch neu prüfen – sobald der Tunnel online ist, geht's weiter
+  setTimeout(() => location.reload(), 15000);
 }
 
 // ---------- App ----------
