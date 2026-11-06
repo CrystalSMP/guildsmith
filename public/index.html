@@ -4,118 +4,255 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guildsmith</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>document.write('<script src="tunnel.js?v=' + Date.now() + '"><\/script>')</script>
+<script>
+  if (location.hostname.endsWith("github.io") && window.TUNNEL_URL) location.replace(window.TUNNEL_URL);
+</script>
 <style>
-  :root { --bg:#1e1f22; --panel:#2b2d31; --text:#dbdee1; --muted:#949ba4; --accent:#5865f2; --ok:#23a55a; --bad:#da373c; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; }
-  main { max-width:860px; margin:0 auto; padding:24px 16px; }
-  h1 { margin:0 0 4px; } p.sub { color:var(--muted); margin:0 0 24px; }
-  .card { background:var(--panel); border-radius:10px; padding:16px; margin-bottom:16px; }
-  textarea, input, select { width:100%; background:var(--bg); color:var(--text); border:1px solid #3f4147; border-radius:6px; padding:10px; font:inherit; }
-  textarea { min-height:90px; resize:vertical; }
-  button { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:10px 16px; font:inherit; font-weight:600; cursor:pointer; margin-top:10px; }
-  button.ok { background:var(--ok); } button.ghost { background:#4e5058; }
-  button:disabled { opacity:.5; cursor:wait; }
-  .row { display:flex; gap:8px; flex-wrap:wrap; }
-  .roles span { display:inline-block; padding:2px 10px; border-radius:99px; margin:3px; border:2px solid; font-size:13px; }
-  .cat { margin-top:10px; } .cat b { color:var(--muted); text-transform:uppercase; font-size:12px; }
-  .ch { padding-left:14px; color:var(--text); } .ch small { color:var(--muted); }
-  pre { background:var(--bg); padding:10px; border-radius:6px; max-height:300px; overflow:auto; white-space:pre-wrap; }
-  .hidden { display:none; } label { display:flex; gap:6px; align-items:center; margin-top:8px; color:var(--muted); }
-  label input { width:auto; } a { color:#00a8fc; }
+  :root {
+    --bg:#0b0b0c; --panel:#141415; --panel2:#1b1b1d; --line:#26262a; --text:#ededee; --muted:#8b8b92;
+    --accent:#ffffff; --accentText:#0b0b0c; --green:#22c55e; --red:#ef4444; --blurple:#5865f2;
+  }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 Inter, system-ui, sans-serif; }
+  button { font:inherit; cursor:pointer; border:0; }
+  .app { display:grid; grid-template-columns:240px 1fr 340px; height:100vh; gap:12px; padding:12px; }
+
+  /* Sidebar */
+  .side { background:var(--panel); border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column; padding:14px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; margin-bottom:18px; }
+  .logo { width:32px; height:32px; border-radius:9px; background:#fff; color:#000; display:grid; place-items:center; font-size:17px; }
+  .brand small { display:block; font-weight:500; font-size:10px; letter-spacing:.08em; color:var(--muted); }
+  .newchat { display:flex; align-items:center; gap:8px; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:9px 12px; width:100%; }
+  .newchat:hover { border-color:#3a3a40; }
+  .label { font-size:10px; letter-spacing:.1em; color:var(--muted); margin:20px 4px 8px; text-transform:uppercase; }
+  .tip { color:var(--muted); font-size:12.5px; padding:8px 10px; border-radius:8px; cursor:pointer; }
+  .tip:hover { background:var(--panel2); color:var(--text); }
+  .side .foot { margin-top:auto; font-size:11px; color:var(--muted); }
+
+  /* Chat */
+  .chat { background:var(--panel); border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column; min-width:0; }
+  .msgs { flex:1; overflow-y:auto; padding:28px max(24px, calc(50% - 360px)); display:flex; flex-direction:column; gap:18px; }
+  .hello { margin:auto; text-align:center; }
+  .hello h1 { font-size:30px; margin:0 0 6px; display:flex; align-items:center; gap:12px; justify-content:center; }
+  .hello p { color:var(--muted); margin:0; }
+  .msg { display:flex; gap:12px; max-width:100%; }
+  .msg.user { justify-content:flex-end; }
+  .msg.user .bubble { background:var(--panel2); border:1px solid var(--line); border-radius:16px 16px 4px 16px; padding:10px 14px; max-width:80%; white-space:pre-wrap; }
+  .msg.bot .av { flex:none; width:28px; height:28px; border-radius:8px; background:#fff; color:#000; display:grid; place-items:center; font-size:14px; }
+  .msg.bot .bubble { padding-top:3px; max-width:85%; }
+  .bubble pre { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:12.5px/1.55 ui-monospace, Consolas, monospace; white-space:pre-wrap; max-height:320px; overflow:auto; margin:8px 0 0; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .chip { background:var(--panel2); border:1px solid var(--line); border-radius:99px; padding:3px 10px; font-size:12px; color:var(--muted); }
+  .dots span { display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%; background:var(--muted); animation:b 1s infinite; }
+  .dots span:nth-child(2){animation-delay:.15s} .dots span:nth-child(3){animation-delay:.3s}
+  @keyframes b { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+
+  .composer { padding:0 max(24px, calc(50% - 360px)) 18px; }
+  .box { background:var(--panel2); border:1px solid var(--line); border-radius:16px; padding:12px 12px 10px 16px; }
+  .box:focus-within { border-color:#3a3a40; }
+  .box textarea { width:100%; background:none; border:0; outline:0; color:var(--text); font:inherit; resize:none; min-height:24px; max-height:180px; }
+  .box .row { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+  .model { color:var(--muted); font-size:12px; }
+  .send { width:34px; height:34px; border-radius:10px; background:var(--accent); color:var(--accentText); font-size:16px; }
+  .send:disabled { background:#2a2a2e; color:#666; cursor:default; }
+  .hint { text-align:center; color:#5d5d63; font-size:11px; margin-top:8px; }
+
+  /* Plan */
+  .plan { background:var(--panel); border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column; min-width:0; }
+  .plan header { display:flex; align-items:center; gap:8px; padding:14px; border-bottom:1px solid var(--line); }
+  .plan header b { font-size:14px; } .plan header span { color:var(--muted); font-size:12px; flex:1; }
+  .build { background:var(--accent); color:var(--accentText); border-radius:8px; padding:6px 12px; font-weight:600; font-size:12.5px; }
+  .build:disabled { background:#2a2a2e; color:#666; cursor:default; }
+  .tabs { display:flex; gap:4px; padding:10px 14px; }
+  .tab { background:none; color:var(--muted); border-radius:8px; padding:6px 12px; font-weight:500; }
+  .tab.on { background:#fff; color:#000; }
+  .list { flex:1; overflow-y:auto; padding:4px 14px 14px; }
+  .empty { color:var(--muted); text-align:center; margin-top:40px; font-size:13px; }
+  .cat { font-size:11px; font-weight:600; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; margin:14px 0 4px; display:flex; gap:6px; }
+  .ch { display:flex; gap:8px; align-items:center; padding:5px 8px; border-radius:6px; color:#c9c9cf; }
+  .ch:hover { background:var(--panel2); }
+  .ch i { font-style:normal; color:var(--muted); width:16px; text-align:center; }
+  .ch small { color:#5d5d63; margin-left:auto; font-size:11px; }
+  .role { display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; }
+  .role:hover { background:var(--panel2); }
+  .dot { width:12px; height:12px; border-radius:50%; flex:none; }
+  .role small { display:block; color:var(--muted); font-size:11px; }
+  .plan footer { border-top:1px solid var(--line); padding:10px 14px; font-size:11px; color:var(--muted); display:flex; gap:6px; align-items:center; }
+  .plan footer::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--st, #555); }
+
+  /* Modal */
+  .modal { position:fixed; inset:0; background:#000a; display:none; place-items:center; padding:16px; z-index:9; }
+  .modal.on { display:grid; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; width:100%; max-width:420px; }
+  .card h3 { margin:0 0 4px; } .card p { color:var(--muted); margin:0 0 14px; font-size:13px; }
+  .card select { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; }
+  .card label { display:flex; gap:8px; align-items:center; margin:12px 0; color:var(--muted); font-size:13px; }
+  .card .btns { display:flex; gap:8px; margin-top:16px; }
+  .card .btns button { flex:1; padding:10px; border-radius:10px; font-weight:600; }
+  .ghost { background:var(--panel2); color:var(--text); border:1px solid var(--line) !important; }
+  .white { background:#fff; color:#000; }
+  .invite { display:block; text-align:center; background:var(--blurple); color:#fff; border-radius:10px; padding:9px; text-decoration:none; font-weight:600; margin-top:10px; }
+
+  @media (max-width: 1000px) {
+    .app { grid-template-columns:1fr; grid-template-rows:auto 1fr auto; height:auto; min-height:100vh; }
+    .side { display:none; } .chat { min-height:70vh; } .plan { max-height:60vh; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>⚒️ Guildsmith</h1>
-  <p class="sub">Beschreib deinen Server → AI macht einen Plan → du sagst Ja oder änderst → Build.</p>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">⚒</div><div>Guildsmith<small>SERVER BUILDER</small></div></div>
+    <button class="newchat" id="newChat">✎ &nbsp;Neuer Chat</button>
+    <div class="label">Ideen</div>
+    <div class="tip">Minecraft SMP mit Regeln, Support-Tickets und Voice</div>
+    <div class="tip">Roleplay-Server Köln mit Polizei, Rettungsdienst und Zivil</div>
+    <div class="tip">Gaming-Community mit Clips, LFG und Events</div>
+    <div class="tip">Lernserver für die Klasse mit Fächern und Hausaufgaben</div>
+    <div class="foot">Gemini · Plan prüfen, bevor du baust.</div>
+  </aside>
 
-  <div class="card">
-    <textarea id="prompt" placeholder="z.B. Ein Minecraft SMP Server mit Regeln, Ankündigungen, Support-Tickets, Voice-Kanälen und Rollen Owner, Admin, Mod, VIP, Member"></textarea>
-    <button id="planBtn">✨ Plan erstellen</button>
-  </div>
-
-  <div class="card hidden" id="planCard">
-    <h3 style="margin-top:0">📋 Plan</h3>
-    <p id="summary"></p>
-    <div class="roles" id="roles"></div>
-    <div id="cats"></div>
-    <textarea id="change" placeholder="Was soll geändert werden? z.B. 'Füge eine Giveaway-Kategorie hinzu und mach VIP gold'" style="margin-top:14px;min-height:60px"></textarea>
-    <div class="row">
-      <button class="ghost" id="reviseBtn">✏️ Ändern</button>
-      <button class="ok" id="yesBtn">✅ Ja, passt!</button>
+  <section class="chat">
+    <div class="msgs" id="msgs">
+      <div class="hello" id="hello">
+        <h1><span class="logo" style="width:40px;height:40px;font-size:20px">⚒</span><span id="greet">Hallo</span></h1>
+        <p>Beschreib deinen Discord-Server. Ich erstelle den Plan, du baust ihn mit einem Klick.</p>
+      </div>
     </div>
-  </div>
+    <div class="composer">
+      <div class="box">
+        <textarea id="input" rows="1" placeholder="Wie soll dein Server aussehen?"></textarea>
+        <div class="row"><span class="model">Gemini 2.5 Flash</span><button class="send" id="send" disabled>➤</button></div>
+      </div>
+      <div class="hint">Die AI kann Fehler machen. Prüfe den Plan, bevor du baust.</div>
+    </div>
+  </section>
 
-  <div class="card hidden" id="buildCard">
-    <h3 style="margin-top:0">🚀 Build</h3>
-    <p>Wähle den Server, auf dem der Bot ist. Noch nicht drauf? <a id="invite" target="_blank">Bot einladen</a> und dann neu laden.</p>
-    <div class="row"><select id="guild"></select><button class="ghost" id="reloadBtn" style="margin-top:0">↻</button></div>
-    <label><input type="checkbox" id="wipe"> Vorher alle bestehenden Kanäle &amp; Rollen löschen</label>
-    <button class="ok" id="buildBtn">🔨 Build</button>
-    <pre id="log" class="hidden"></pre>
+  <aside class="plan">
+    <header><b>📄 Plan</b><span id="stats">leer</span><button class="build" id="buildBtn" disabled>🔨 Build</button></header>
+    <div class="tabs"><button class="tab on" data-t="ch"># Kanäle</button><button class="tab" data-t="ro">👥 Rollen</button></div>
+    <div class="list" id="list"><div class="empty">Noch kein Plan.<br>Schreib links, was du willst.</div></div>
+    <footer id="status">Bereit</footer>
+  </aside>
+</div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <h3>Server bauen</h3>
+    <p>Wähle den Server, auf dem der Bot ist.</p>
+    <select id="guild"></select>
+    <a class="invite" id="invite" target="_blank">Bot zu einem Server einladen</a>
+    <label><input type="checkbox" id="wipe"> Vorher alle Kanäle &amp; Rollen löschen</label>
+    <div class="btns"><button class="ghost" id="cancel">Abbrechen</button><button class="ghost" id="reload">↻</button><button class="white" id="go">Bauen</button></div>
   </div>
-</main>
-<script>document.write('<script src="tunnel.js?v=' + Date.now() + '"><\/script>')</script>
+</div>
+
 <script>
-const API = "";
-if (location.hostname.endsWith("github.io")) {
-  if (window.TUNNEL_URL) location.replace(window.TUNNEL_URL);
-  else document.body.innerHTML = "<main><h1>⚒️ Guildsmith</h1><p class=sub>Gerade offline – der Host-PC ist nicht an.</p></main>";
-}
 const $ = (id) => document.getElementById(id);
-let plan = null;
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+let plan = null, firstPrompt = "", tab = "ch", busy = false;
+
+if (location.hostname.endsWith("github.io") && !window.TUNNEL_URL) {
+  document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;text-align:center"><div><h1>⚒️ Guildsmith</h1><p style="color:#8b8b92">Gerade offline – der Host-PC ist nicht an.</p></div></div>';
+}
+const h = new Date().getHours();
+$("greet").textContent = h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend";
+
+function addMsg(role, html) {
+  $("hello")?.remove();
+  const d = document.createElement("div");
+  d.className = "msg " + role;
+  d.innerHTML = role === "bot" ? `<div class="av">⚒</div><div class="bubble">${html}</div>` : `<div class="bubble">${html}</div>`;
+  $("msgs").append(d);
+  $("msgs").scrollTop = 1e9;
+  return d.querySelector(".bubble");
+}
+function setStatus(t, c) { $("status").textContent = t; $("status").style.setProperty("--st", c); }
 
 async function post(url, body) {
-  const r = await fetch(API + url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) throw new Error(d.error);
   return d;
 }
-async function busy(btn, fn) {
-  const t = btn.textContent; btn.disabled = true; btn.textContent = "⏳ ...";
-  try { await fn(); } catch (e) { alert(e.message); }
-  btn.disabled = false; btn.textContent = t;
-}
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 
-function show(p) {
-  plan = p;
-  $("planCard").classList.remove("hidden");
-  $("summary").textContent = p.summary || "";
-  $("roles").innerHTML = p.roles.map((r) =>
-    `<span style="border-color:${esc(r.color)};color:${esc(r.color)}" title="${esc((r.permissions||[]).join(", "))}">${esc(r.name)}</span>`).join("");
-  $("cats").innerHTML = p.categories.map((c) => `
-    <div class="cat"><b>${esc(c.name)}</b>${c.private_to_roles?.length ? ` <small>🔒 ${esc(c.private_to_roles.join(", "))}</small>` : ""}
-    ${(c.channels||[]).map((ch) => `<div class="ch">${ch.type === "voice" ? "🔊" : "#"} ${esc(ch.name)} ${ch.readonly ? "<small>(nur lesen)</small>" : ""} <small>${esc(ch.topic)}</small></div>`).join("")}
-    </div>`).join("");
+function renderPlan() {
+  if (!plan) return;
+  const chs = plan.categories.reduce((n, c) => n + (c.channels?.length || 0), 0);
+  $("stats").textContent = `${chs} Kanäle · ${plan.roles.length} Rollen · ${plan.categories.length} Kategorien`;
+  $("buildBtn").disabled = false;
+  $("list").innerHTML = tab === "ch"
+    ? plan.categories.map((c) => `<div class="cat">⌄ ${esc(c.name)} ${c.private_to_roles?.length ? "🔒" : ""}</div>` +
+        (c.channels || []).map((ch) => `<div class="ch"><i>${ch.type === "voice" ? "🔊" : "#"}</i>${esc(ch.name)}${ch.readonly ? "<small>nur lesen</small>" : ""}</div>`).join("")).join("")
+    : plan.roles.map((r) => `<div class="role"><span class="dot" style="background:${esc(r.color)}"></span><div>${esc(r.name)}<small>${esc((r.permissions || []).join(", ") || "Standard")}</small></div></div>`).join("");
 }
 
-$("planBtn").onclick = () => busy($("planBtn"), async () => show(await post("/api/plan", { prompt: $("prompt").value })));
-$("reviseBtn").onclick = () => busy($("reviseBtn"), async () => {
-  show(await post("/api/revise", { prompt: $("prompt").value, plan, change: $("change").value }));
-  $("change").value = "";
-});
-$("yesBtn").onclick = () => { $("buildCard").classList.remove("hidden"); loadGuilds(); $("buildCard").scrollIntoView({ behavior: "smooth" }); };
-$("reloadBtn").onclick = () => loadGuilds();
+async function send() {
+  const text = $("input").value.trim();
+  if (!text || busy) return;
+  busy = true; $("input").value = ""; autosize(); $("send").disabled = true;
+  addMsg("user", esc(text));
+  const thinking = addMsg("bot", '<span class="dots"><span></span><span></span><span></span></span>');
+  setStatus("Denkt nach…", "#eab308");
+  try {
+    if (!plan) { firstPrompt = text; plan = await post("/api/plan", { prompt: text }); }
+    else plan = await post("/api/revise", { prompt: firstPrompt, plan, change: text });
+    const chs = plan.categories.reduce((n, c) => n + (c.channels?.length || 0), 0);
+    thinking.innerHTML = `${esc(plan.summary || "Plan erstellt.")}
+      <div class="chips"><span class="chip">${plan.roles.length} Rollen</span><span class="chip">${plan.categories.length} Kategorien</span><span class="chip">${chs} Kanäle</span></div>
+      <div style="color:var(--muted);margin-top:8px;font-size:13px">Passt alles? Dann klick rechts auf <b>Build</b> – oder schreib, was ich ändern soll.</div>`;
+    renderPlan();
+    setStatus("Plan bereit – nichts ausstehend", "var(--green)");
+  } catch (e) {
+    thinking.innerHTML = `<span style="color:var(--red)">Fehler: ${esc(e.message)}</span>`;
+    setStatus("Fehler", "var(--red)");
+  }
+  busy = false; $("input").focus();
+}
+
+function autosize() { const t = $("input"); t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; $("send").disabled = !t.value.trim(); }
+$("input").addEventListener("input", autosize);
+$("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("send").onclick = send;
+document.querySelectorAll(".tip").forEach((t) => (t.onclick = () => { $("input").value = t.textContent; autosize(); $("input").focus(); }));
+document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => {
+  document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x === b)); tab = b.dataset.t; renderPlan();
+}));
+$("newChat").onclick = () => location.reload();
 
 async function loadGuilds() {
   try {
-    const gs = await (await fetch(API + "/api/guilds")).json();
-    $("guild").innerHTML = gs.length ? gs.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join("") : "<option value=''>Bot ist auf keinem Server</option>";
-    $("invite").href = (await (await fetch(API + "/api/invite")).json()).url;
-  } catch (e) { alert(e.message); }
+    const gs = await (await fetch("/api/guilds")).json();
+    if (gs.error) throw new Error(gs.error);
+    $("guild").innerHTML = gs.length ? gs.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join("") : "<option value=''>Bot ist noch auf keinem Server</option>";
+    $("invite").href = (await (await fetch("/api/invite")).json()).url;
+  } catch (e) { $("guild").innerHTML = `<option value=''>Fehler: ${esc(e.message)}</option>`; }
 }
-
-$("buildBtn").onclick = () => busy($("buildBtn"), async () => {
-  if (!$("guild").value) throw new Error("Erst den Bot einladen.");
+$("buildBtn").onclick = () => { $("modal").classList.add("on"); loadGuilds(); };
+$("cancel").onclick = () => $("modal").classList.remove("on");
+$("reload").onclick = loadGuilds;
+$("go").onclick = async () => {
+  if (!$("guild").value) return alert("Lade zuerst den Bot ein.");
   if ($("wipe").checked && !confirm("Wirklich ALLE Kanäle und Rollen löschen?")) return;
-  const log = $("log"); log.textContent = ""; log.classList.remove("hidden");
-  const r = await fetch(API + "/api/build", { method: "POST", headers: { "Content-Type": "application/json" },
+  $("modal").classList.remove("on");
+  const name = $("guild").selectedOptions[0].textContent;
+  addMsg("user", `Bau den Plan auf <b>${esc(name)}</b>`);
+  const b = addMsg("bot", `Baue gerade…<pre></pre>`);
+  const pre = b.querySelector("pre");
+  setStatus("Baut…", "#eab308"); $("buildBtn").disabled = true;
+  const r = await fetch("/api/build", { method:"POST", headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ guildId: $("guild").value, plan, wipe: $("wipe").checked }) });
   const reader = r.body.getReader(), dec = new TextDecoder();
-  for (;;) { const { done, value } = await reader.read(); if (done) break; log.textContent += dec.decode(value); log.scrollTop = 1e9; }
-});
+  for (;;) { const { done, value } = await reader.read(); if (done) break; pre.textContent += dec.decode(value); pre.scrollTop = 1e9; $("msgs").scrollTop = 1e9; }
+  const ok = pre.textContent.includes("✅");
+  b.firstChild.textContent = ok ? "Fertig! Dein Server ist eingerichtet. 🎉" : "Beim Bauen gab es einen Fehler:";
+  setStatus(ok ? "Gebaut" : "Fehler beim Bauen", ok ? "var(--green)" : "var(--red)");
+  $("buildBtn").disabled = false;
+};
 </script>
 </body>
 </html>
