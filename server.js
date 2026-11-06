@@ -251,6 +251,7 @@ const V2_ROLE = process.env.V2_ROLE_NAME || "V2 Pre-Access";
 const v2Cache = new Map(); // userId -> { ok, at }
 let v2RoleId = null;
 async function hasV2(uid, fresh) {
+  if (isTester(uid)) return true; // Pre-Tester: V2-Zugang für immer
   if (!V2_GUILD) return false;
   const c = v2Cache.get(uid);
   if (!fresh && c && Date.now() - c.at < 60000) return c.ok;
@@ -259,7 +260,7 @@ async function hasV2(uid, fresh) {
     if (!v2RoleId) v2RoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === V2_ROLE)?.id;
     const m = await discord("GET", `/guilds/${V2_GUILD}/members/${uid}`);
     ok = !!v2RoleId && m.roles.includes(v2RoleId);
-    if (ok) markTester(uid, m.roles);
+    if (ok) markTester(uid, m.roles, m.user);
   } catch {} // nicht auf dem Server = kein Zugang
   v2Cache.set(uid, { ok, at: Date.now() });
   return ok;
@@ -271,12 +272,16 @@ let testers = {};
 try { testers = JSON.parse(rf("testers.json", "utf8")); } catch {}
 let testerRoleId = null;
 const isTester = (uid) => !!testers[uid];
-async function markTester(uid, roles = []) {
+async function markTester(uid, roles = [], user) {
   if (!testers[uid]) {
-    testers[uid] = { since: new Date().toISOString() };
-    wf("testers.json", JSON.stringify(testers, null, 2));
-    console.log("⭐ Neuer Pre-Tester:", uid);
+    const n = Object.values(testers).reduce((max, t) => Math.max(max, t.n || 0), 0) + 1;
+    testers[uid] = { n, since: new Date().toISOString() };
+    console.log(`⭐ Neuer Pre-Tester #${n}:`, user?.username || uid);
   }
+  // Nummer nachtragen (ältere Einträge) und Namen aktuell halten
+  if (!testers[uid].n) testers[uid].n = Object.values(testers).reduce((max, t) => Math.max(max, t.n || 0), 0) + 1;
+  if (user) testers[uid].name = user.global_name || user.username;
+  wf("testers.json", JSON.stringify(testers, null, 2));
   try {
     if (!testerRoleId) testerRoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === TESTER_ROLE)?.id;
     if (testerRoleId && !roles.includes(testerRoleId)) await discord("PUT", `/guilds/${V2_GUILD}/members/${uid}/roles/${testerRoleId}`);
@@ -288,7 +293,7 @@ async function syncTesters() {
   try {
     if (!v2RoleId) v2RoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === V2_ROLE)?.id;
     const members = await discord("GET", `/guilds/${V2_GUILD}/members?limit=1000`);
-    for (const m of members) if (v2RoleId && m.roles.includes(v2RoleId)) await markTester(m.user.id, m.roles);
+    for (const m of members) if (v2RoleId && m.roles.includes(v2RoleId)) await markTester(m.user.id, m.roles, m.user);
   } catch (e) { console.log("⚠ Pre-Tester-Abgleich:", e.message); }
 }
 setTimeout(syncTesters, 3000);
@@ -421,7 +426,7 @@ function requireAuth(req, res, next) {
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.get("/api/me", requireAuth, async (req, res) => {
   const u = req.sess.user;
-  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id, req.query.fresh === "1"), tester: isTester(u.id) });
+  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id, req.query.fresh === "1"), tester: testers[u.id] ? { n: testers[u.id].n, since: testers[u.id].since, total: Object.keys(testers).length } : null });
 });
 
 const MANAGE = (1n << 3n) | (1n << 5n); // ADMINISTRATOR oder MANAGE_GUILD
