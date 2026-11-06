@@ -188,6 +188,137 @@
   .ghost { background:var(--panel2); color:var(--text); border:1px solid var(--line) !important; }
   .white { background:#fff; color:#000; }
 
+
+  /* ================= Design-Upgrade ================= */
+  :root {
+    --bg:#07070a; --panel:rgba(20,20,26,.72); --panel2:rgba(255,255,255,.04); --line:rgba(255,255,255,.07);
+    --text:#f2f2f5; --muted:#8e8e9a; --accent:#ffffff; --accentText:#08080b;
+    --brand:#7c6cff; --brand2:#5865f2; --glow:rgba(124,108,255,.45);
+  }
+  body {
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(124,108,255,.16), transparent 60%),
+      radial-gradient(700px 500px at 110% 10%, rgba(88,101,242,.12), transparent 60%),
+      radial-gradient(600px 400px at 50% 120%, rgba(34,197,94,.06), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+    font-family: Inter, system-ui, sans-serif; letter-spacing:-.005em;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px); background-size:22px 22px;
+    mask-image:linear-gradient(to bottom, #000, transparent 85%); }
+  .view { position:relative; z-index:1; }
+  ::selection { background:var(--brand); color:#fff; }
+  * { scrollbar-width:thin; scrollbar-color:#2a2a33 transparent; }
+
+  /* Glas-Panels */
+  .side, .chat, .plan, .card, .hero, .g, .srv-card, .stats, .box2, .menu, .search {
+    background:var(--panel); backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%);
+    border:1px solid var(--line); box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 20px 50px -30px rgba(0,0,0,.8);
+  }
+  .side, .chat, .plan { border-radius:18px; }
+
+  /* Logo mit Glow */
+  .logo { box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 6px 24px -6px var(--glow); }
+  .big { width:76px !important; height:76px !important; border-radius:22px !important; box-shadow:0 0 0 1px rgba(255,255,255,.1), 0 20px 60px -10px var(--glow); animation:float 5s ease-in-out infinite; }
+  @keyframes float { 50% { transform:translateY(-6px); } }
+
+  /* Überschriften mit Verlauf */
+  .center h1, .hello h1 span:last-child, .servers h2 {
+    background:linear-gradient(180deg,#fff 30%, #b9b4ff); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .center h1 { font-size:36px; letter-spacing:-.03em; }
+  .center p { font-size:15px; line-height:1.6; }
+
+  /* Buttons */
+  .discord { background:linear-gradient(135deg,#6d7bff,#5865f2 50%,#7c6cff); box-shadow:0 10px 40px -10px var(--glow), 0 0 0 1px rgba(255,255,255,.12) inset; padding:14px 26px; border-radius:14px; transition:transform .15s, box-shadow .15s; }
+  .discord:hover { transform:translateY(-2px); box-shadow:0 16px 50px -10px var(--glow), 0 0 0 1px rgba(255,255,255,.2) inset; filter:none; }
+  .white, .gbtn.open, .build, .send, .tab.on, .nav.on { background:linear-gradient(180deg,#fff,#e6e6ee); color:#08080b; box-shadow:0 4px 16px -6px rgba(255,255,255,.35); }
+  .build:disabled, .send:disabled { background:rgba(255,255,255,.06); color:#55555f; box-shadow:none; }
+  .gbtn, .ghost, .newchat, .model { background:rgba(255,255,255,.04); border:1px solid var(--line) !important; transition:background .15s, border-color .15s; }
+  .gbtn:hover, .ghost:hover, .newchat:hover, .model:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.14) !important; }
+  button { transition:transform .1s, background .15s, color .15s, border-color .15s; }
+  button:active:not(:disabled) { transform:scale(.97); }
+
+  /* Status-Pill */
+  .pill { background:rgba(255,255,255,.04); backdrop-filter:blur(10px); }
+  .pill::before { box-shadow:0 0 10px var(--st); }
+
+  /* Topbar */
+  .top { background:rgba(7,7,10,.6); backdrop-filter:blur(16px); position:sticky; top:0; z-index:3; }
+
+  /* Server-Karten */
+  .g { border-radius:16px; transition:transform .18s, border-color .18s, box-shadow .18s; }
+  .g:hover { transform:translateY(-3px); border-color:rgba(124,108,255,.35); box-shadow:0 20px 50px -25px var(--glow); }
+  .g .ic { border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.04); }
+  .hero { background:linear-gradient(120deg, rgba(124,108,255,.14), rgba(20,20,26,.7) 55%); border-color:rgba(124,108,255,.22); }
+  .search { border-radius:14px; padding:13px 18px; }
+  .search:focus { border-color:rgba(124,108,255,.5); box-shadow:0 0 0 4px rgba(124,108,255,.12); }
+
+  /* Sidebar */
+  .nav { border-radius:10px; padding:8px 10px; }
+  .nav:hover { background:rgba(255,255,255,.05); }
+  .nav.on i { filter:none; }
+  .label { color:#5f5f6b; font-weight:600; }
+  .switch { background:rgba(255,255,255,.04); border-radius:12px; }
+  .switch:hover { background:rgba(255,255,255,.07); }
+  .new { background:linear-gradient(135deg,#22c55e,#4ade80); box-shadow:0 0 12px rgba(34,197,94,.5); }
+
+  /* Übersicht */
+  .ai-card { border-radius:18px; padding:24px; background:
+      radial-gradient(500px 200px at 0% 0%, rgba(34,197,94,.18), transparent 70%),
+      radial-gradient(500px 200px at 100% 100%, rgba(124,108,255,.18), transparent 70%), var(--panel);
+    border:1px solid rgba(34,197,94,.22); }
+  .ai-card b { font-size:20px; letter-spacing:-.02em; }
+  .srv-card, .stats, .box2 { border-radius:18px; }
+  .stat b { font-size:32px; letter-spacing:-.03em; background:linear-gradient(180deg,#fff,#a9a9b8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .stat { transition:background .15s; } .stat:hover { background:rgba(255,255,255,.025); }
+  .live { display:inline-flex; align-items:center; gap:6px; }
+  .dot2.on { box-shadow:0 0 10px var(--green); }
+
+  /* Chat */
+  .hello h1 { font-size:36px; letter-spacing:-.03em; }
+  .msg { animation:pop .25s ease-out; }
+  @keyframes pop { from { opacity:0; transform:translateY(6px); } }
+  .msg.user .bubble { background:linear-gradient(135deg, rgba(124,108,255,.22), rgba(88,101,242,.14)); border:1px solid rgba(124,108,255,.25); }
+  .tip { transition:all .15s; }
+  .ideas .tip { background:rgba(255,255,255,.03); }
+  .ideas .tip:hover { border-color:rgba(124,108,255,.45); background:rgba(124,108,255,.1); color:var(--text); transform:translateY(-1px); }
+  .box { position:relative; border-radius:20px; background:rgba(12,12,16,.85); border:1px solid rgba(124,108,255,.28);
+    box-shadow:0 0 0 1px rgba(124,108,255,.08), 0 10px 60px -20px var(--glow); }
+  .box:focus-within { border-color:rgba(124,108,255,.6); box-shadow:0 0 0 4px rgba(124,108,255,.12), 0 14px 70px -18px var(--glow); }
+  .send { border-radius:12px; }
+  .qbox { background:rgba(255,255,255,.035) !important; border-color:rgba(124,108,255,.2) !important; }
+  .qopt.on { background:linear-gradient(135deg,#7c6cff,#5865f2); color:#fff; border-color:transparent; box-shadow:0 6px 20px -8px var(--glow); }
+  .bubble pre { background:rgba(0,0,0,.4); }
+  .step.done span { text-shadow:0 0 8px var(--green); }
+  .spin { border-top-color:var(--brand); }
+
+  /* Plan */
+  .plan header { padding:16px; }
+  .tab { border-radius:10px; }
+  .ch, .role { border-radius:8px; transition:background .12s; }
+  .ch:hover, .role:hover { background:rgba(255,255,255,.05); }
+  .dot { box-shadow:0 0 8px currentColor; }
+  .cat { color:#6f6f7b; }
+
+  /* Login */
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; margin-top:22px; padding:5px 12px 5px 8px; border-radius:99px; font-size:12px; color:#c4b5fd; background:rgba(124,108,255,.12); border:1px solid rgba(124,108,255,.3); }
+  .eyebrow span { width:7px; height:7px; border-radius:50%; background:#a78bfa; box-shadow:0 0 10px #a78bfa; }
+  .heroh { font-size:52px !important; line-height:1.05; margin:14px 0 12px !important; }
+  .howto { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:48px auto 0; max-width:640px; text-align:left; }
+  .howto div { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; backdrop-filter:blur(14px); }
+  .howto b { display:grid; place-items:center; width:26px; height:26px; border-radius:8px; background:rgba(124,108,255,.18); color:#c4b5fd; font-size:13px; margin-bottom:10px; }
+  .howto span { display:block; font-weight:600; } .howto small { color:var(--muted); font-size:12.5px; }
+  @media (max-width:640px) { .heroh { font-size:36px !important; } .howto { grid-template-columns:1fr; } }
+
+  /* Menü & Modal */
+  .menu { border-radius:16px; background:rgba(16,16,22,.92); }
+  .opt { border-radius:10px; }
+  .modal { background:rgba(0,0,0,.55); backdrop-filter:blur(6px); }
+  .card { border-radius:20px; animation:pop .2s ease-out; }
+  .banner { border-radius:12px; backdrop-filter:blur(10px); }
   @media (max-width: 1000px) {
     .app { grid-template-columns:1fr; height:auto; min-height:100vh; }
     .page.builder.on { grid-template-columns:1fr; } .two { grid-template-columns:1fr; }
@@ -212,11 +343,15 @@
 <section class="view" id="vLogin">
   <div class="center"><div>
     <div class="logo big">⚒</div>
-    <h1>Willkommen bei Guildsmith</h1>
-    <p>Beschreib deinen Discord-Server – Guildsmith plant ihn und baut ihn mit einem Klick. Melde dich zuerst mit Discord an.</p>
-    <a class="discord" href="/auth/login">
-      Mit Discord anmelden
-    </a>
+    <div class="eyebrow"><span></span>Guildsmith V2 Beta ist da</div>
+    <h1 class="heroh">Dein Discord-Server.<br>In Sekunden gebaut.</h1>
+    <p>Beschreib einfach, was du willst – Guildsmith plant Rollen, Kategorien und Kanäle und richtet alles mit einem Klick ein.</p>
+    <a class="discord" href="/auth/login">Mit Discord anmelden →</a>
+    <div class="howto">
+      <div><b>1</b><span>Beschreiben</span><small>Sag im Chat, was dein Server braucht</small></div>
+      <div><b>2</b><span>Prüfen</span><small>Plan ansehen und Änderungen wünschen</small></div>
+      <div><b>3</b><span>Bauen</span><small>Ein Klick – alles wird eingerichtet</small></div>
+    </div>
   </div></div>
 </section>
 
