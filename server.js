@@ -82,14 +82,14 @@ function progressOf(text) {
 
 async function ask(messages, onProgress = () => {}) {
   // Bei Überlastung automatisch neu versuchen, danach optional Ersatzmodell
-  const models = [process.env.GEMINI_MODEL || "gemini-3.8-flash", process.env.GEMINI_FALLBACK_MODEL].filter(Boolean);
+  const models = [process.env.GEMINI_MODEL || "gemini-3.8-flash", ...(process.env.GEMINI_FALLBACK_MODEL || "").split(",")].map((m) => m.trim()).filter(Boolean);
   const body = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM }] },
     contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
     generationConfig: { responseMimeType: "application/json" },
   });
   onProgress({ step: "understand" });
-  const TRIES = 5;
+  const TRIES = 2; // Versuche pro Modell, danach nächstes Ersatzmodell
   let r, attempt = 0;
   for (;;) {
     const model = models[Math.min(Math.floor(attempt / TRIES), models.length - 1)];
@@ -105,7 +105,7 @@ async function ask(messages, onProgress = () => {}) {
     if (![429, 500, 503].includes(r.status) || attempt >= TRIES * models.length) {
       throw new Error(r.status === 503 || r.status === 429 ? "Guildsmith ist gerade stark ausgelastet. Bitte versuch es in ein paar Minuten nochmal." : msg);
     }
-    const wait = Math.min(2 ** (attempt % TRIES || TRIES), 20);
+    const wait = attempt % TRIES ? 3 : 1; // kurz warten, beim Modellwechsel fast sofort
     onProgress({ step: "retry", attempt, max: TRIES * models.length, wait });
     await new Promise((ok) => setTimeout(ok, wait * 1000));
     onProgress({ step: "understand" });
