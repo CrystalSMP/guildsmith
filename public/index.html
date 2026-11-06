@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guildsmith</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>document.write('<script src="tunnel.js?v=' + Date.now() + '"><\/script>')</script>
@@ -17,7 +18,7 @@
   body { background:var(--bg); color:var(--text); font:14px/1.5 Inter, system-ui, sans-serif; }
   button { font:inherit; cursor:pointer; border:0; }
   .view { display:none; } .view.on { display:block; }
-  .logo { width:32px; height:32px; border-radius:9px; background:#fff; color:#000; display:grid; place-items:center; font-size:17px; flex:none; }
+  .logo { width:32px; height:32px; border-radius:9px; background:url(logo.svg) center/cover no-repeat; color:transparent !important; font-size:0 !important; display:grid; place-items:center; flex:none; overflow:hidden; }
   .center { min-height:100vh; display:grid; place-items:center; padding:16px; text-align:center; }
   .center h1 { margin:16px 0 6px; font-size:28px; } .center p { color:var(--muted); margin:0 auto; max-width:420px; }
   .big { width:60px; height:60px; font-size:30px; margin:0 auto; border-radius:16px; }

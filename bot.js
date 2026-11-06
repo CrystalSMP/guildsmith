@@ -25,7 +25,7 @@ export function startBot(token) {
           "Beschreib einfach, wie dein Server aussehen soll – Guildsmith V1 plant **Rollen, Kategorien und Kanäle** und baut alles mit einem Klick.\n\n" +
           "**So geht's:**\n1. Auf **Diesen Server bauen** klicken\n2. Mit Discord anmelden\n3. Server im Chat beschreiben → Plan prüfen → **Build**"
         )
-        .setThumbnail(client.user.displayAvatarURL())
+        .setThumbnail(`${PAGES_URL}/logo.png`)
         .setFooter({ text: "Guildsmith V1" });
 
       const row = new ActionRowBuilder().addComponents(
