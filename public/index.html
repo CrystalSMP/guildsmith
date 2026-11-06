@@ -56,9 +56,13 @@
     <pre id="log" class="hidden"></pre>
   </div>
 </main>
-<script src="config.js"></script>
+<script>document.write('<script src="tunnel.js?v=' + Date.now() + '"></script>')</script>
 <script>
-const API = location.hostname.endsWith("github.io") ? window.API_BASE : "";
+const API = "";
+if (location.hostname.endsWith("github.io")) {
+  if (window.TUNNEL_URL) location.replace(window.TUNNEL_URL);
+  else document.body.innerHTML = "<main><h1>⚒️ Guildsmith</h1><p class=sub>Gerade offline – der Host-PC ist nicht an.</p></main>";
+}
 const $ = (id) => document.getElementById(id);
 let plan = null;
 
