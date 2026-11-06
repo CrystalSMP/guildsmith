@@ -219,6 +219,54 @@
       })));
     },
 
+    // ---------- Custom Bots ----------
+    async custombots(el) {
+      const list = await api("automations");
+      const cardHtml = (a, preview) => `<div class="cbcard ${preview ? "preview" : a.enabled ? "" : "off"}">
+          <div class="cbtop"><b>⚡ ${esc(a.name)}</b><span class="sp"></span>
+            ${preview ? "" : `${["interval", "daily", "weekly"].includes(a.trigger.type) ? `<button class="ghost sm2" data-run="${a.id}">▶ Jetzt ausführen</button>` : ""}
+            <label class="tgl"><input type="checkbox" data-tog="${a.id}" ${a.enabled ? "checked" : ""}><i></i></label>
+            <button class="ghost sm2" data-del="${a.id}">🗑</button>`}</div>
+          ${a.summary ? `<p class="cbsum">${esc(a.summary)}</p>` : ""}
+          <span class="cbwhen">⏱ ${esc(a.when)}</span>
+          <ul class="cbwhat">${a.what.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>
+          ${!preview && a.lastRun ? `<div class="cbmeta">Zuletzt ausgeführt: ${new Date(a.lastRun).toLocaleString("de-DE")} · ${a.runs || 0}× insgesamt${a.lastLog?.some((l) => l.startsWith("✗")) ? ` · ⚠ ${esc(a.lastLog.filter((l) => l.startsWith("✗")).join(", "))}` : ""}</div>` : ""}
+          ${preview ? `<div class="factions" style="margin-top:12px"><button class="ghost" id="cbNo">Verwerfen</button><button class="white" id="cbYes">⚡ Aktivieren</button></div>` : ""}
+        </div>`;
+      el.innerHTML = head("⚡", "Custom Bots", "Beschreib, was dein Bot automatisch tun soll – Guildsmith baut ihn für dich. Nur Discord-Sachen.") + warnIntents() + card("Neuer Custom Bot", `
+        <div class="cbask"><textarea id="cbIn" placeholder="z.B. Lösch jeden Tag um 3 Uhr den Kanal #memes und erstell ihn neu"></textarea><button class="white" id="cbGo" style="padding:12px 18px;border-radius:12px;font-weight:700">✦ Erstellen</button></div>
+        <div class="cbex">${["Jeden Tag um 3 Uhr #allgemein leeren", "Wenn jemand !regeln schreibt, die Regeln posten", "Neue Mitglieder bekommen eine DM mit Infos", "Jeden Montag 18 Uhr Event-Erinnerung posten", "Wer „discord.gg“ schreibt, 10 Min. stummschalten", "Alle 30 Min. Kanalname auf Mitgliederzahl setzen"].map((x) => `<button>${x}</button>`).join("")}</div>
+        <div id="cbOut"></div>`) + card(`Deine Custom Bots <span class="tag">${list.length}/25</span>`, list.length ? list.map((a) => cardHtml(a)).join("") : `<div class="empty">Noch keine Custom Bots.</div>`);
+
+      el.querySelectorAll(".cbex button").forEach((b) => (b.onclick = () => { $("cbIn").value = b.textContent; $("cbIn").focus(); }));
+      $("cbGo").onclick = (e) => run(e.target, async () => {
+        $("cbOut").innerHTML = `<div class="cbcard"><div class="step now"><span><i class="spin"></i></span>Guildsmith baut deinen Bot…</div></div>`;
+        try {
+          const a = await api("automations/ai", { method: "POST", body: { prompt: val("cbIn") } });
+          $("cbOut").innerHTML = cardHtml(a, true);
+          $("cbNo").onclick = () => ($("cbOut").innerHTML = "");
+          $("cbYes").onclick = (ev) => run(ev.target, async () => {
+            const { name, summary, trigger, actions } = a;
+            await api("automations", { method: "POST", body: { name, summary, trigger, actions } });
+            PAGES.custombots(el);
+          }, "Custom Bot aktiviert ⚡");
+        } catch (err) {
+          $("cbOut").innerHTML = `<div class="cberr">🤖 ${esc(err.message)}</div>`;
+        }
+      });
+      el.querySelectorAll("[data-tog]").forEach((t) => (t.onchange = async () => {
+        try { await api(`automations/${t.dataset.tog}`, { method: "PATCH", body: { enabled: t.checked } }); t.closest(".cbcard").classList.toggle("off", !t.checked); toast(t.checked ? "Aktiviert" : "Pausiert"); }
+        catch (e) { toast(e.message, true); }
+      }));
+      el.querySelectorAll("[data-del]").forEach((b) => (b.onclick = () => confirm("Custom Bot löschen?") && run(b, async () => { await api(`automations/${b.dataset.del}`, { method: "DELETE" }); PAGES.custombots(el); }, "Gelöscht")));
+      el.querySelectorAll("[data-run]").forEach((b) => (b.onclick = () => confirm("Jetzt ausführen? Das passiert wirklich auf deinem Server.") && run(b, async () => {
+        const r = await api(`automations/${b.dataset.run}/run`, { method: "POST" });
+        const bad = r.log.filter((l) => l.startsWith("✗"));
+        if (bad.length) throw new Error(bad.join(", "));
+        PAGES.custombots(el);
+      }, "Ausgeführt ✓")));
+    },
+
     // ---------- Bot-Profil (V2) ----------
     async botprofile(el) {
       const b = await api("botprofile");

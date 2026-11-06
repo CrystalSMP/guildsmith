@@ -427,6 +427,21 @@
   .pbot { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; } .pbot b { font-size:13px; display:block; }
   .pperks { margin-top:12px; font-size:10.5px; color:#e8c983; border-top:1px solid rgba(245,184,46,.25); padding-top:8px; }
   .passhint { color:#c9a75e; margin-top:22px; font-size:13.5px; text-align:center; }
+  .cbask { display:flex; gap:10px; align-items:flex-end; }
+  .cbask textarea { flex:1; min-height:70px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:12px; font:inherit; outline:0; resize:vertical; }
+  .cbask textarea:focus { border-color:rgba(124,108,255,.55); box-shadow:0 0 0 3px rgba(124,108,255,.12); }
+  .cbex { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .cbex button { background:rgba(255,255,255,.04); border:1px solid var(--line); color:var(--muted); border-radius:99px; padding:5px 12px; font-size:12.5px; }
+  .cbex button:hover { color:var(--text); border-color:rgba(124,108,255,.45); }
+  .cbcard { border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:10px; background:rgba(0,0,0,.25); }
+  .cbcard.preview { border-color:rgba(124,108,255,.45); box-shadow:0 0 30px -12px var(--glow); }
+  .cbcard.off { opacity:.55; }
+  .cbtop { display:flex; align-items:center; gap:10px; } .cbtop b { font-size:15px; } .cbtop .tgl { margin:0; }
+  .cbwhen { display:inline-block; margin:8px 0 6px; padding:3px 10px; border-radius:99px; background:rgba(124,108,255,.14); color:#c4b5fd; font-size:12px; font-weight:600; }
+  .cbwhat { margin:0; padding-left:0; list-style:none; font-size:13px; color:#d4d4dc; } .cbwhat li { padding:3px 0; }
+  .cbsum { color:var(--muted); font-size:12.5px; margin:4px 0 0; }
+  .cbmeta { color:#6f6f7b; font-size:11.5px; margin-top:8px; }
+  .cberr { margin-top:10px; padding:10px 14px; border-radius:12px; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); color:#fecaca; font-size:13px; }
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(20,20,26,.95); border:1px solid rgba(34,197,94,.4); color:#bbf7d0; padding:10px 18px; border-radius:12px; z-index:20; animation:pop .2s; font-size:13.5px; box-shadow:0 10px 40px #000a; }
   .toast.bad { border-color:rgba(239,68,68,.5); color:#fecaca; }
   @media (max-width:1000px) { .row2 { grid-template-columns:1fr; } }
@@ -492,7 +507,8 @@
     <nav class="navs">
 <div class="label">Haupt</div>
 <button class="nav" data-page="overview" data-label="Übersicht"><i>▦</i><span>Übersicht</span></button>
-<button class="nav" data-page="builder" data-label="AI Builder"><i>✦</i><span>AI Builder</span><span class="new">NEU</span></button>
+<button class="nav" data-page="builder" data-label="AI Builder"><i>✦</i><span>AI Builder</span></button>
+<button class="nav" data-page="f:custombots" data-label="Custom Bots"><i>⚡</i><span>Custom Bots</span><span class="new">NEU</span></button>
 <button class="nav locked" data-page="locked" data-label="Bot-Profil"><i>🤖</i><span>Bot-Profil</span><span class="v2tag">V2</span></button>
 <button class="nav" data-page="f:settings" data-label="Server-Einstellungen"><i>⚙</i><span>Server-Einstellungen</span></button>
 <button class="nav" data-page="f:stats" data-label="Statistiken"><i>📈</i><span>Statistiken</span></button>

@@ -201,6 +201,29 @@ aber nur Dinge, die NICHT schon in der Beschreibung stehen. Jede Frage hat 2 bis
 Antworte NUR mit JSON: {"questions":[{"q":"Frage?","options":["A","B","C"],"multi":false}]}
 multi=true nur, wenn mehrere Antworten sinnvoll sind. Ist die Beschreibung schon sehr genau, gib {"questions":[]} zurück.`;
 
+// Allgemeiner KI-Aufruf: System-Text + Nutzertext -> JSON (schnelle Modelle, mit Ersatz)
+async function aiJson(system, prompt) {
+  let last = "Guildsmith ist gerade ausgelastet. Bitte gleich nochmal versuchen.";
+  for (const model of [...ENGINES.v2.models, ...ENGINES.fast.models]) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } },
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!r.ok) { last = (await r.json().catch(() => ({}))).error?.message || last; continue; }
+      const d = await r.json();
+      return parseJson(d.candidates?.[0]?.content?.parts?.filter((x) => !x.thought).map((x) => x.text || "").join("") || "");
+    } catch (e) { if (e instanceof SyntaxError) last = "Die KI hat ungültige Daten geliefert."; }
+  }
+  throw new Error(last);
+}
+
 app.post("/api/questions", async (req, res) => {
   const prompt = String(req.body.prompt || "").slice(0, 2000);
   for (const model of ENGINES.fast.models) {
@@ -566,7 +589,7 @@ app.post("/api/build", requireAuth, async (req, res) => {
 });
 
 const port = process.env.PORT || 3001;
-registerFeatureRoutes(app, { requireAuth, userGuilds, discord, hasV2 });
+registerFeatureRoutes(app, { requireAuth, userGuilds, discord, hasV2, aiJson });
 if (!process.env.NO_BOT) startBot(TOKEN);
 app.listen(port, () => console.log(`Läuft auf http://localhost:${port}`)).on("error", (e) => {
   if (e.code === "EADDRINUSE") console.log(`❌ Port ${port} ist schon belegt. Läuft Guildsmith schon in einem anderen Fenster? Dann das zuerst schließen – oder in der .env einen anderen PORT eintragen.`);

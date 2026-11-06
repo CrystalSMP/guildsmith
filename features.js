@@ -1,6 +1,7 @@
 // Alle Dashboard-Features: Bot-Logik + API-Routen.
 // Daten liegen in data.json (pro Server).
 import { readFileSync, writeFileSync } from "node:fs";
+import { setupAutomations, automationPrompt, validateAutomation, describe, runActions } from "./automations.js";
 import {
   EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits,
 } from "discord.js";
@@ -21,10 +22,12 @@ const DEFAULTS = {
   automod: { enabled: false, invites: true, links: false, caps: false, words: [], logChannel: "" },
 };
 
+export const saveData = () => save();
+
 export function guildData(id) {
   const g = (db[id] ||= {});
   for (const [k, v] of Object.entries(DEFAULTS)) g[k] = { ...structuredClone(v), ...(g[k] || {}) };
-  g.xpUsers ||= {}; g.stats ||= {}; g.polls ||= {}; g.giveaways ||= {}; g.backups ||= [];
+  g.xpUsers ||= {}; g.stats ||= {}; g.polls ||= {}; g.giveaways ||= {}; g.backups ||= []; g.automations ||= [];
   return g;
 }
 
@@ -50,6 +53,7 @@ const xpForLevel = (l) => l * l * 100;
 let client = null;
 export function setupFeatures(c, full) {
   client = c;
+  setupAutomations(c, full, () => Object.keys(db));
   if (full) {
     c.on("guildMemberAdd", async (m) => {
       stat(m.guild.id, "joins");
@@ -202,7 +206,7 @@ async function endGiveaway(gid, gw) {
 }
 
 // ---------- API ----------
-export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, hasV2 }) {
+export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, hasV2, aiJson }) {
   const access = async (req, res) => {
     const g = (await userGuilds(req.sess).catch(() => [])).find((x) => x.id === req.params.id);
     if (!g || !g.installed) { res.status(403).json({ error: "Kein Zugriff auf diesen Server." }); return null; }
@@ -411,6 +415,60 @@ export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, h
     }
     await discord("PATCH", `/guilds/${req.params.id}/members/@me`, body);
     res.json({ ok: true });
+  }));
+
+  // ---------- Custom Bots (Automationen) ----------
+  const autoMeta = async (gid) => {
+    const [channels, roles] = await Promise.all([discord("GET", `/guilds/${gid}/channels`), discord("GET", `/guilds/${gid}/roles`)]);
+    return {
+      channels: channels.filter((c) => [0, 2, 5, 13].includes(c.type)).map((c) => ({ id: c.id, name: c.name, type: c.type })),
+      categories: channels.filter((c) => c.type === 4).map((c) => ({ id: c.id, name: c.name })),
+      roles: roles.filter((r) => r.id !== gid && !r.managed).map((r) => ({ id: r.id, name: r.name })),
+    };
+  };
+  const view = (a, meta) => ({ ...a, ...describe(a, meta) });
+  app.get(R("automations"), requireAuth, wrap(async (req, res) => {
+    const meta = await autoMeta(req.params.id);
+    res.json(guildData(req.params.id).automations.map((a) => view(a, meta)));
+  }));
+  // KI: Wunsch -> Automation (wird noch NICHT gespeichert)
+  app.post(R("automations/ai"), requireAuth, wrap(async (req, res) => {
+    const prompt = String(req.body.prompt || "").slice(0, 1500);
+    if (!prompt.trim()) return res.status(400).json({ error: "Beschreib, was dein Bot tun soll." });
+    const meta = await autoMeta(req.params.id);
+    const raw = await aiJson(automationPrompt(meta), prompt);
+    const a = validateAutomation(raw, meta);
+    res.json(view(a, meta));
+  }));
+  app.post(R("automations"), requireAuth, wrap(async (req, res) => {
+    const meta = await autoMeta(req.params.id);
+    const a = validateAutomation(req.body, meta);
+    const g = guildData(req.params.id);
+    if (g.automations.length >= 25) return res.status(400).json({ error: "Maximal 25 Custom Bots pro Server." });
+    const item = { id: Date.now().toString(36), enabled: true, created: Date.now(), ...a,
+      lastRun: a.trigger.type === "interval" ? Date.now() : 0 };
+    g.automations.push(item); save();
+    res.json(view(item, meta));
+  }));
+  app.patch(R("automations/:aid"), requireAuth, wrap(async (req, res) => {
+    const a = guildData(req.params.id).automations.find((x) => x.id === req.params.aid);
+    if (!a) return res.status(404).json({ error: "Nicht gefunden." });
+    if ("enabled" in req.body) a.enabled = !!req.body.enabled;
+    save();
+    res.json({ ok: true });
+  }));
+  app.delete(R("automations/:aid"), requireAuth, wrap(async (req, res) => {
+    const g = guildData(req.params.id);
+    g.automations = g.automations.filter((x) => x.id !== req.params.aid); save();
+    res.json({ ok: true });
+  }));
+  app.post(R("automations/:aid/run"), requireAuth, wrap(async (req, res) => {
+    if (!needBot(res)) return;
+    const a = guildData(req.params.id).automations.find((x) => x.id === req.params.aid);
+    if (!a) return res.status(404).json({ error: "Nicht gefunden." });
+    if (!["interval", "daily", "weekly"].includes(a.trigger.type)) return res.status(400).json({ error: "Nur zeitgesteuerte Custom Bots kann man von Hand starten." });
+    const guild = await client.guilds.fetch(req.params.id);
+    res.json({ log: await runActions(client, guild, a) });
   }));
 
   // Server-Einstellungen
