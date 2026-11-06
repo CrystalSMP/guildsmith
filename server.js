@@ -80,11 +80,34 @@ function progressOf(text) {
   return { step, detail, roles: roles.length, categories, channels };
 }
 
-async function ask(messages, onProgress = () => {}) {
+// ---------- Modelle ----------
+const list = (v, d) => (v || d).split(",").map((m) => m.trim()).filter(Boolean);
+const ENGINES = {
+  fast: { label: "Guildsmith V1 Fast", desc: "Schnell, für die meisten Server",
+    models: list(process.env.FAST_MODELS, "gemini-3.5-flash-lite,gemini-3.6-flash"), thinking: "minimal" },
+  pro: { label: "Guildsmith V1 Pro", desc: "Gründlicher, für große Server", locked: true },
+  v2: { label: "Guildsmith V2 Beta", desc: "Neueste Engine · 1 Server pro Tag", beta: true, daily: 1,
+    models: list(process.env.V2_MODELS, "gemini-3.6-flash,gemini-3.8-flash,gemini-3.5-flash-lite"), thinking: process.env.V2_THINKING ?? "low" },
+};
+
+// Tageslimit (pro Discord-Nutzer) in usage.json
+import { readFileSync as rf, writeFileSync as wf } from "node:fs";
+const today = () => new Date().toISOString().slice(0, 10);
+const loadUsage = () => { try { return JSON.parse(rf("usage.json", "utf8")); } catch { return {}; } };
+function usedToday(uid, engine) { const u = loadUsage()[uid]; return u?.date === today() ? u[engine] || 0 : 0; }
+function addUse(uid, engine) {
+  const all = loadUsage();
+  const u = all[uid]?.date === today() ? all[uid] : { date: today() };
+  u[engine] = (u[engine] || 0) + 1;
+  all[uid] = u;
+  wf("usage.json", JSON.stringify(all, null, 2));
+}
+
+async function ask(messages, onProgress = () => {}, engine = ENGINES.fast) {
   // Bei Überlastung automatisch neu versuchen, danach optional Ersatzmodell
-  const models = [process.env.GEMINI_MODEL || "gemini-3.6-flash", ...(process.env.GEMINI_FALLBACK_MODEL || "").split(",")].map((m) => m.trim()).filter(Boolean);
+  const models = engine.models;
   // Wenig "Nachdenken" = viel schneller (Standard: minimal)
-  const thinking = process.env.GEMINI_THINKING ?? "minimal";
+  const thinking = engine.thinking;
   const makeBody = (withThinking) => JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM }] },
     contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
@@ -151,7 +174,7 @@ app.use(["/api/plan", "/api/revise"], requireAuth, (_req, res, next) => {
 });
 
 // Antwort als NDJSON streamen: {type:"progress",...} … {type:"done",plan} oder {type:"error"}
-async function streamPlan(res, messages) {
+async function streamPlan(res, messages, engine) {
   res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
   res.setHeader("Cache-Control", "no-cache");
   const send = (o) => res.write(JSON.stringify(o) + "\n");
@@ -160,7 +183,7 @@ async function streamPlan(res, messages) {
     const plan = await ask(messages, (p) => {
       const k = JSON.stringify(p);
       if (k !== last) { last = k; send({ type: "progress", ...p }); }
-    });
+    }, engine);
     send({ type: "done", plan });
   } catch (e) {
     send({ type: "error", error: e.message });
@@ -168,17 +191,44 @@ async function streamPlan(res, messages) {
   res.end();
 }
 
-// Neuer Plan aus Prompt
-app.post("/api/plan", (req, res) => streamPlan(res, [{ role: "user", content: req.body.prompt }]));
+function pickEngine(req, res) {
+  const key = req.body.engine || "fast";
+  const e = ENGINES[key];
+  if (!e) { res.status(400).json({ error: "Unbekanntes Modell." }); return null; }
+  if (e.locked) { res.status(403).json({ error: `${e.label} ist noch gesperrt.` }); return null; }
+  return { key, e };
+}
 
-// Plan ändern
+app.get("/api/engines", requireAuth, (req, res) => {
+  res.json(Object.entries(ENGINES).map(([key, e]) => ({
+    key, label: e.label, desc: e.desc, locked: !!e.locked, beta: !!e.beta,
+    left: e.daily ? Math.max(0, e.daily - usedToday(req.sess.user.id, key)) : null,
+  })));
+});
+
+// Neuer Plan aus Prompt
+app.post("/api/plan", (req, res) => {
+  const p = pickEngine(req, res);
+  if (!p) return;
+  const uid = req.sess.user.id;
+  if (p.e.daily) {
+    if (usedToday(uid, p.key) >= p.e.daily) return res.status(429).json({ error: `Mit ${p.e.label} kannst du nur ${p.e.daily} Server pro Tag erstellen. Morgen geht's wieder – oder nimm V1 Fast.` });
+    addUse(uid, p.key);
+  }
+  streamPlan(res, [{ role: "user", content: req.body.prompt }], p.e);
+});
+
+// Plan ändern (zählt nicht zum Tageslimit)
 app.post("/api/revise", (req, res) => {
+  const p = pickEngine(req, res);
+  if (!p) return;
   const { prompt, plan, change } = req.body;
   streamPlan(res, [
     { role: "user", content: prompt },
     { role: "assistant", content: JSON.stringify(plan) },
-    { role: "user", content: `Ändere den Plan: ${change}\nGib den kompletten neuen Plan als JSON zurück.` },
-  ]);
+    { role: "user", content: `Ändere den Plan: ${change}
+Gib den kompletten neuen Plan als JSON zurück.` },
+  ], p.e);
 });
 
 async function discord(method, path, body) {
@@ -287,6 +337,31 @@ async function userGuilds(s, fresh) {
 app.get("/api/guilds", requireAuth, async (req, res) => {
   try {
     res.json(await userGuilds(req.sess, req.query.fresh === "1"));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Übersicht eines Servers
+app.get("/api/guild/:id/overview", requireAuth, async (req, res) => {
+  try {
+    const g = (await userGuilds(req.sess)).find((x) => x.id === req.params.id);
+    if (!g || !g.installed) return res.status(403).json({ error: "Kein Zugriff." });
+    const [info, channels, roles] = await Promise.all([
+      discord("GET", `/guilds/${g.id}?with_counts=true`),
+      discord("GET", `/guilds/${g.id}/channels`),
+      discord("GET", `/guilds/${g.id}/roles`),
+    ]);
+    res.json({
+      name: info.name, icon: g.icon,
+      members: info.approximate_member_count, online: info.approximate_presence_count,
+      text: channels.filter((c) => c.type === 0 || c.type === 5).length,
+      voice: channels.filter((c) => c.type === 2 || c.type === 13).length,
+      categories: channels.filter((c) => c.type === 4).length,
+      roles: roles.filter((r) => r.id !== g.id && !r.managed).length,
+      boosts: info.premium_subscription_count || 0, boostTier: info.premium_tier || 0,
+      created: Number((BigInt(g.id) >> 22n) + 1420070400000n),
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

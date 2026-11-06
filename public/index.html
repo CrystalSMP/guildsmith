@@ -52,7 +52,53 @@
   .gbtn.open { background:#fff; color:#000; }
 
   /* Chat-App */
-  .app { display:grid; grid-template-columns:240px 1fr 340px; height:100vh; gap:12px; padding:12px; }
+  .app { display:grid; grid-template-columns:250px 1fr; height:100vh; gap:12px; padding:12px; }
+  .main { min-width:0; min-height:0; }
+  .page { display:none; height:100%; overflow:auto; } .page.on { display:block; }
+  .page.builder.on { display:grid; grid-template-columns:1fr 340px; gap:12px; overflow:hidden; }
+  .navs { flex:1; overflow-y:auto; margin:4px -6px 0; padding:0 6px; }
+  .nav { display:flex; align-items:center; gap:10px; width:100%; background:none; color:#b5b5bb; padding:7px 10px; border-radius:8px; font-size:13.5px; text-align:left; }
+  .nav i { font-style:normal; width:18px; text-align:center; font-size:13px; }
+  .nav span:first-of-type { flex:1; }
+  .nav:hover { background:var(--panel2); color:var(--text); }
+  .nav.on { background:#fff; color:#000; font-weight:600; }
+  .nav.locked { color:#6b6b72; }
+  .lock { font-size:10px; opacity:.7; }
+  .new { font-size:9px; font-weight:700; background:var(--green); color:#000; border-radius:5px; padding:1px 5px; }
+  .side .foot { padding-top:10px; border-top:1px solid var(--line); margin-top:8px; }
+  .side .foot a { color:var(--muted); }
+  .ideas { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:18px auto 0; max-width:560px; }
+  .ideas .tip { border:1px solid var(--line); border-radius:99px; padding:6px 12px; }
+  .newchat.sm { width:34px; height:34px; padding:0; justify-content:center; font-size:18px; border-radius:10px; }
+  .box .row { gap:8px; } .sp { flex:1; }
+  .picker { position:relative; }
+  .model { background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:7px 12px; font-size:12.5px; font-weight:600; }
+  .menu { display:none; position:absolute; bottom:44px; right:0; width:290px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px; box-shadow:0 12px 40px #000a; z-index:5; }
+  .menu.on { display:block; }
+  .opt { display:flex; gap:10px; align-items:center; width:100%; background:none; color:var(--text); text-align:left; padding:9px 10px; border-radius:8px; }
+  .opt:hover { background:var(--panel2); } .opt div { flex:1; } .opt small { display:block; color:var(--muted); font-size:11.5px; }
+  .opt.dis { opacity:.45; cursor:not-allowed; }
+  .badge { font-size:9.5px; font-weight:700; border-radius:5px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
+  .badge.beta { background:#3b2a6b; color:#c4b5fd; } .badge.pro { background:#3a2a0a; color:#facc15; }
+  .ai-card { display:flex; align-items:center; gap:16px; flex-wrap:wrap; background:linear-gradient(120deg,#0f1f15,#141415 60%); border:1px solid #1f3a28; border-radius:14px; padding:20px; margin-bottom:14px; }
+  .ai-card > div { flex:1; } .ai-card small { color:var(--green); font-weight:700; letter-spacing:.08em; font-size:10.5px; } .ai-card b { display:block; font-size:17px; margin:2px 0 8px; }
+  .tryai { padding:10px 18px; border-radius:10px; font-weight:700; }
+  .srv-card { display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px; }
+  .srv-card .ic { width:48px; height:48px; border-radius:50%; background:var(--panel2); display:grid; place-items:center; overflow:hidden; font-weight:700; flex:none; }
+  .srv-card .ic img { width:100%; } .srv-card b { font-size:18px; display:block; } .srv-card small { color:var(--muted); }
+  .live { color:var(--green); font-size:12px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+  .stat { padding:18px; border-right:1px solid var(--line); } .stat:last-child { border-right:0; }
+  .stat small { color:var(--muted); font-size:12.5px; } .stat b { display:block; font-size:28px; margin-top:6px; }
+  .stat em { font-style:normal; color:var(--muted); font-size:11.5px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .box2 { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .box2 h4 { margin:0; padding:14px 16px; border-bottom:1px solid var(--line); font-size:14px; }
+  .box2 .tag { margin:0 0 0 6px; }
+  .feat { display:flex; align-items:center; gap:10px; padding:11px 16px; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .feat:last-child { border-bottom:0; } .feat span:nth-child(2) { flex:1; } .feat small { color:var(--muted); font-size:11.5px; }
+  .dot2 { width:8px; height:8px; border-radius:50%; background:#444; } .dot2.on { background:var(--green); }
+  .lockbig { font-size:44px; }
   .side { background:var(--panel); border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column; padding:14px; min-width:0; }
   .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; margin-bottom:14px; }
   .brand small { display:block; font-weight:500; font-size:10px; letter-spacing:.08em; color:var(--muted); }
@@ -136,6 +182,7 @@
 
   @media (max-width: 1000px) {
     .app { grid-template-columns:1fr; height:auto; min-height:100vh; }
+    .page.builder.on { grid-template-columns:1fr; } .two { grid-template-columns:1fr; }
     .side { display:none; } .chat { min-height:70vh; } .plan { max-height:60vh; }
     .grid { grid-template-columns:1fr; } .hero { flex-wrap:wrap; }
   }
@@ -186,39 +233,98 @@
 <section class="view" id="vApp">
 <div class="app">
   <aside class="side">
-    <div class="brand"><div class="logo">⚒</div><div>Guildsmith<small>SERVER BUILDER</small></div></div>
+    <div class="brand"><div class="logo">⚒</div><div>Guildsmith<small>DASHBOARD</small></div></div>
     <button class="switch" id="switchBtn"><span class="ic" id="sIc"></span><span><b id="sName"></b><small>Server wechseln</small></span>‹</button>
-    <button class="newchat" id="newChat">✎ &nbsp;Neuer Chat</button>
-    <div class="label">Ideen</div>
-    <div class="tip">Minecraft SMP mit Regeln, Support-Tickets und Voice</div>
-    <div class="tip">Roleplay-Server Köln mit Polizei, Rettungsdienst und Zivil</div>
-    <div class="tip">Gaming-Community mit Clips, LFG und Events</div>
-    <div class="tip">Lernserver für die Klasse mit Fächern und Hausaufgaben</div>
-    <div class="foot">Guildsmith V1 · Plan prüfen, bevor du baust.</div>
+    <nav class="navs">
+<div class="label">Haupt</div>
+<button class="nav" data-page="overview" data-label="Übersicht"><i>▦</i><span>Übersicht</span></button>
+<button class="nav" data-page="builder" data-label="AI Builder"><i>✦</i><span>AI Builder</span><span class="new">NEU</span></button>
+<button class="nav locked" data-page="locked" data-label="Bot-Profil"><i>🤖</i><span>Bot-Profil</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Server-Einstellungen"><i>⚙</i><span>Server-Einstellungen</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Statistiken"><i>📈</i><span>Statistiken</span><span class="lock">🔒</span></button>
+<div class="label">Willkommen</div>
+<button class="nav locked" data-page="locked" data-label="Willkommen"><i>👋</i><span>Willkommen</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Auto-Rollen"><i>🏷</i><span>Auto-Rollen</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Verifizierung"><i>✔</i><span>Verifizierung</span><span class="lock">🔒</span></button>
+<div class="label">Community</div>
+<button class="nav locked" data-page="locked" data-label="Tickets"><i>🎫</i><span>Tickets</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="XP & Level"><i>⭐</i><span>XP & Level</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Umfragen"><i>📊</i><span>Umfragen</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Giveaways"><i>🎁</i><span>Giveaways</span><span class="lock">🔒</span></button>
+<div class="label">Sicherheit</div>
+<button class="nav locked" data-page="locked" data-label="Auto-Moderation"><i>🛡</i><span>Auto-Moderation</span><span class="lock">🔒</span></button>
+<button class="nav locked" data-page="locked" data-label="Backups"><i>💾</i><span>Backups</span><span class="lock">🔒</span></button>
+<div class="label">Vorlagen</div>
+<button class="nav locked" data-page="locked" data-label="Vorlagen"><i>🧩</i><span>Vorlagen</span><span class="lock">🔒</span></button>
+    </nav>
+    <div class="foot"><a href="/auth/logout">Abmelden</a></div>
   </aside>
-  <section class="chat">
-    <div class="msgs" id="msgs">
-      <div class="hello" id="hello">
-        <h1><span class="logo" style="width:40px;height:40px;font-size:20px">⚒</span><span id="greet">Hallo</span></h1>
-        <p>Beschreib, wie <b id="helloGuild"></b> aussehen soll. Ich erstelle den Plan, du baust ihn mit einem Klick.</p>
+
+  <main class="main">
+    <!-- Übersicht -->
+    <div class="page" id="pOverview">
+      <div class="ai-card">
+        <div><small>AI BUILDER</small><b>Richte deinen Server in Sekunden ein</b>
+          <div class="chips"><span class="chip"># Kanäle</span><span class="chip">🛡 Rechte</span><span class="chip">👥 Rollen</span></div></div>
+        <button class="white tryai" data-go="builder">✦ AI Builder öffnen</button>
+      </div>
+      <div class="srv-card"><span class="ic" id="oIc"></span><div><b id="oName"></b><small id="oSub">Lade…</small></div><span class="sp"></span><span class="live">● Live</span><button class="gbtn" id="oRefresh">↻</button></div>
+      <div class="stats" id="oStats"></div>
+      <div class="two">
+        <div class="box2"><h4>⚙ Funktionen <span class="tag">1/12</span></h4><div id="oFeatures"></div></div>
+        <div class="box2"><h4>🧠 Modelle</h4><div id="oEngines"></div></div>
       </div>
     </div>
-    <div class="composer">
-      <div class="box">
-        <textarea id="input" rows="1" placeholder="Wie soll dein Server aussehen?"></textarea>
-        <div class="row"><span class="model">Guildsmith V1</span><button class="send" id="send" disabled>➤</button></div>
-      </div>
-      <div class="hint">Guildsmith kann Fehler machen. Prüfe den Plan, bevor du baust.</div>
+
+    <!-- AI Builder -->
+    <div class="page builder" id="pBuilder">
+      <section class="chat">
+        <div class="msgs" id="msgs">
+          <div class="hello" id="hello">
+            <h1><span class="logo" style="width:40px;height:40px;font-size:20px">⚒</span><span id="greet">Hallo</span></h1>
+            <p>Beschreib, wie <b id="helloGuild"></b> aussehen soll. Ich erstelle den Plan, du baust ihn mit einem Klick.</p>
+            <div class="ideas">
+              <div class="tip">Minecraft SMP mit Regeln, Support-Tickets und Voice</div>
+              <div class="tip">Roleplay-Server Köln mit Polizei, Rettungsdienst und Zivil</div>
+              <div class="tip">Gaming-Community mit Clips, LFG und Events</div>
+              <div class="tip">Lernserver für die Klasse mit Fächern und Hausaufgaben</div>
+            </div>
+          </div>
+        </div>
+        <div class="composer">
+          <div class="box">
+            <textarea id="input" rows="1" placeholder="Wie soll dein Server aussehen?"></textarea>
+            <div class="row">
+              <button class="newchat sm" id="newChat" title="Neuer Chat">＋</button>
+              <span class="sp"></span>
+              <div class="picker"><button class="model" id="modelBtn">V1 Fast ⌃</button><div class="menu" id="modelMenu"></div></div>
+              <button class="send" id="send" disabled>➤</button>
+            </div>
+          </div>
+          <div class="hint">Guildsmith kann Fehler machen. Prüfe den Plan, bevor du baust.</div>
+        </div>
+      </section>
+      <aside class="plan">
+        <header><b>📄 Plan</b><span id="stats">leer</span><button class="build" id="buildBtn" disabled>🔨 Build</button></header>
+        <div class="tabs"><button class="tab on" data-t="ch"># Kanäle</button><button class="tab" data-t="ro">👥 Rollen</button></div>
+        <div class="list" id="list"><div class="empty">Noch kein Plan.<br>Schreib im Chat, was du willst.</div></div>
+        <footer id="status">Bereit</footer>
+      </aside>
     </div>
-  </section>
-  <aside class="plan">
-    <header><b>📄 Plan</b><span id="stats">leer</span><button class="build" id="buildBtn" disabled>🔨 Build</button></header>
-    <div class="tabs"><button class="tab on" data-t="ch"># Kanäle</button><button class="tab" data-t="ro">👥 Rollen</button></div>
-    <div class="list" id="list"><div class="empty">Noch kein Plan.<br>Schreib im Chat, was du willst.</div></div>
-    <footer id="status">Bereit</footer>
-  </aside>
+
+    <!-- Gesperrt -->
+    <div class="page" id="pLocked">
+      <div class="center" style="min-height:70vh"><div>
+        <div class="lockbig">🔒</div>
+        <h1 id="lTitle">Gesperrt</h1>
+        <p>Diese Funktion ist noch gesperrt und kommt in einem späteren Update von Guildsmith.</p>
+        <button class="white tryai" data-go="builder" style="margin-top:20px">✦ Zum AI Builder</button>
+      </div></div>
+    </div>
+  </main>
 </div>
 </section>
+
 
 <div class="modal" id="modal">
   <div class="card">
@@ -281,7 +387,7 @@ async function showServers(fresh) {
     let want = null;
     try { want = sessionStorage.getItem("guild"); sessionStorage.removeItem("guild"); } catch {}
     const g = guilds.find((x) => x.id === want && x.installed);
-    if (g) { history.replaceState(null, "", "/"); openGuild(g); }
+    if (g) { history.replaceState(null, "", "/"); openGuild(g, "builder"); }
   } catch (e) { $("gCount").textContent = "Fehler: " + e.message; }
 }
 
@@ -310,7 +416,7 @@ $("gGrid").onclick = async (e) => {
   if (open) openGuild(guilds.find((g) => g.id === open));
 };
 
-function openGuild(g) {
+function openGuild(g, page = "overview") {
   guild = g; plan = null; firstPrompt = "";
   $("sIc").innerHTML = icon(g); $("sName").textContent = g.name; hello.querySelector("#helloGuild").textContent = g.name; $("mName").textContent = g.name;
   $("msgs").innerHTML = ""; $("msgs").append(hello);
@@ -326,11 +432,77 @@ function openGuild(g) {
   $("input").disabled = mode.ai === false;
   $("input").placeholder = mode.ai === false ? "Guildsmith ist gerade pausiert." : "Wie soll dein Server aussehen?";
   show("vApp");
-  $("input").focus();
+  showPage(page);
+  loadEngines();
 }
 const hello = $("hello");
 $("switchBtn").onclick = () => showServers();
-$("newChat").onclick = () => openGuild(guild);
+$("newChat").onclick = () => openGuild(guild, "builder");
+
+// ---------- Seiten / Navigation ----------
+function showPage(page, label) {
+  document.querySelectorAll(".page").forEach((x) => x.classList.remove("on"));
+  $({ overview: "pOverview", builder: "pBuilder", locked: "pLocked" }[page]).classList.add("on");
+  document.querySelectorAll(".nav").forEach((n) => n.classList.toggle("on", n.dataset.page === page && (page !== "locked" || n.dataset.label === label)));
+  if (page === "locked") $("lTitle").textContent = `${label} ist gesperrt`;
+  if (page === "overview") loadOverview();
+  if (page === "builder") setTimeout(() => $("input").focus(), 50);
+}
+document.querySelectorAll(".nav").forEach((n) => (n.onclick = () => showPage(n.dataset.page, n.dataset.label)));
+document.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => showPage(b.dataset.go)));
+$("oRefresh").onclick = () => loadOverview();
+
+async function loadOverview() {
+  $("oIc").innerHTML = icon(guild); $("oName").textContent = guild.name; $("oSub").textContent = "Lade…";
+  const stat = (ic, label, val, sub = "") => `<div class="stat"><small>${ic} ${label}</small><b>${val ?? "–"}</b><em>${sub}</em></div>`;
+  try {
+    const r = await fetch(`/api/guild/${guild.id}/overview`);
+    const o = await r.json();
+    if (!r.ok) throw new Error(o.error);
+    $("oSub").textContent = `${o.members} Mitglieder · erstellt am ${new Date(o.created).toLocaleDateString("de-DE")}`;
+    $("oStats").innerHTML =
+      stat("👥", "Mitglieder", o.members, `${o.online ?? 0} online`) +
+      stat("#", "Textkanäle", o.text, `${o.categories} Kategorien`) +
+      stat("🔊", "Sprachkanäle", o.voice) +
+      stat("🏷", "Rollen", o.roles) +
+      stat("💎", "Boosts", o.boosts, `Level ${o.boostTier}`);
+  } catch (e) { $("oSub").textContent = "Fehler: " + e.message; $("oStats").innerHTML = ""; }
+  const feats = [["✦", "AI Builder", true], ["🤖", "Bot-Profil"], ["👋", "Willkommen"], ["🎫", "Tickets"], ["⭐", "XP & Level"], ["🛡", "Auto-Moderation"], ["💾", "Backups"]];
+  $("oFeatures").innerHTML = feats.map(([i, n, on]) => `<div class="feat"><span>${i}</span><span>${n}</span>${on ? '<small>aktiv</small><span class="dot2 on"></span>' : '<small>🔒 gesperrt</small><span class="dot2"></span>'}</div>`).join("");
+  renderEngineList();
+}
+
+// ---------- Modelle ----------
+let engines = [{ key: "fast", label: "Guildsmith V1 Fast", desc: "Schnell, für die meisten Server" }], engine = "fast";
+try { engine = localStorage.getItem("engine") || "fast"; } catch {}
+const short = (l) => l.replace("Guildsmith ", "");
+async function loadEngines() {
+  try { const r = await fetch("/api/engines"); if (r.ok) engines = await r.json(); } catch {}
+  if (!engines.find((e) => e.key === engine && !e.locked && e.left !== 0)) engine = "fast";
+  renderPicker(); renderEngineList();
+}
+function badge(e) { return e.locked ? '<span class="badge pro">PRO</span>' : e.beta ? '<span class="badge beta">BETA</span>' : ""; }
+function engineNote(e) { return e.locked ? "🔒 Gesperrt" : e.left != null ? `${e.left} von 1 heute übrig` : e.desc; }
+function renderPicker() {
+  const cur = engines.find((e) => e.key === engine) || engines[0];
+  $("modelBtn").innerHTML = `${esc(short(cur.label))} ⌃`;
+  $("modelMenu").innerHTML = engines.map((e) => {
+    const dis = e.locked || e.left === 0;
+    return `<button class="opt ${dis ? "dis" : ""}" data-eng="${e.key}" ${dis ? "disabled" : ""}><div>${esc(short(e.label))}${badge(e)}<small>${esc(engineNote(e))}</small></div>${e.key === engine ? "✓" : e.locked ? "🔒" : ""}</button>`;
+  }).join("");
+}
+function renderEngineList() {
+  $("oEngines").innerHTML = engines.map((e) => `<div class="feat"><span>🧠</span><span>${esc(short(e.label))}${badge(e)}</span><small>${esc(engineNote(e))}</small></div>`).join("");
+}
+$("modelBtn").onclick = (ev) => { ev.stopPropagation(); $("modelMenu").classList.toggle("on"); };
+$("modelMenu").onclick = (ev) => {
+  const b = ev.target.closest("[data-eng]");
+  if (!b || b.disabled) return;
+  engine = b.dataset.eng;
+  try { localStorage.setItem("engine", engine); } catch {}
+  $("modelMenu").classList.remove("on"); renderPicker();
+};
+document.addEventListener("click", () => $("modelMenu").classList.remove("on"));
 
 const h = new Date().getHours();
 $("greet").textContent = h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend";
@@ -426,9 +598,10 @@ async function send() {
     const revise = !!plan;
     if (!revise) firstPrompt = text;
     plan = await streamAI(revise ? "/api/revise" : "/api/plan",
-      revise ? { prompt: firstPrompt, plan, change: text } : { prompt: text },
+      revise ? { prompt: firstPrompt, plan, change: text, engine } : { prompt: text, engine },
       (p) => renderSteps(thinking.querySelector(".steps"), p, revise));
     clearInterval(timer);
+    if (!revise) loadEngines();
     const chs = plan.categories.reduce((n, c) => n + (c.channels?.length || 0), 0);
     thinking.innerHTML = `${esc(plan.summary || "Plan erstellt.")}
       <div class="chips"><span class="chip">${plan.roles.length} Rollen</span><span class="chip">${plan.categories.length} Kategorien</span><span class="chip">${chs} Kanäle</span></div>
