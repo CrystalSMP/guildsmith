@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { getMode, setMode, publish } from "./site.js";
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 // Starten beendet die Wartung automatisch
 if (getMode().state === "maintenance") setMode({ state: "normal", ai: true, title: null, message: null });
 

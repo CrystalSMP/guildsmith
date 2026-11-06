@@ -315,6 +315,10 @@ app.post("/api/build", requireAuth, async (req, res) => {
   res.end();
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 startBot(TOKEN);
-app.listen(port, () => console.log(`Läuft auf http://localhost:${port}`));
+app.listen(port, () => console.log(`Läuft auf http://localhost:${port}`)).on("error", (e) => {
+  if (e.code === "EADDRINUSE") console.log(`❌ Port ${port} ist schon belegt. Läuft Guildsmith schon in einem anderen Fenster? Dann das zuerst schließen – oder in der .env einen anderen PORT eintragen.`);
+  else console.log("❌", e.message);
+  process.exit(1);
+});

@@ -7,7 +7,7 @@ Beschreib deinen Discord-Server im Chat – Guildsmith V1 plant Rollen, Kategori
    - **Bot** → Token kopieren
    - **OAuth2** → Client Secret kopieren
    - **OAuth2 → Redirects** → diese zwei Adressen hinzufügen:
-     - `http://localhost:3000/auth/callback`
+     - `http://localhost:3001/auth/callback`
      - `https://crystalsmp.github.io/guildsmith/callback.html`
 2. Doppelklick auf `start.bat` → `.env` öffnet sich → Keys eintragen.
 

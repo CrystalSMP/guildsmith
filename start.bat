@@ -17,9 +17,9 @@ if not exist "node_modules" (
 )
 
 echo.
-echo  Guildsmith startet...  Lokal: http://localhost:3000
+echo  Guildsmith startet...  Lokal: http://localhost:3001
 echo  (Fenster offen lassen. Beenden mit Strg+C)
 echo.
-start "" http://localhost:3000
+start "" http://localhost:3001
 node start.js
 pause
