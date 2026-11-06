@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guildsmith</title>
+<style>
+  :root { --bg:#1e1f22; --panel:#2b2d31; --text:#dbdee1; --muted:#949ba4; --accent:#5865f2; --ok:#23a55a; --bad:#da373c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:24px 16px; }
+  h1 { margin:0 0 4px; } p.sub { color:var(--muted); margin:0 0 24px; }
+  .card { background:var(--panel); border-radius:10px; padding:16px; margin-bottom:16px; }
+  textarea, input, select { width:100%; background:var(--bg); color:var(--text); border:1px solid #3f4147; border-radius:6px; padding:10px; font:inherit; }
+  textarea { min-height:90px; resize:vertical; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:10px 16px; font:inherit; font-weight:600; cursor:pointer; margin-top:10px; }
+  button.ok { background:var(--ok); } button.ghost { background:#4e5058; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  .roles span { display:inline-block; padding:2px 10px; border-radius:99px; margin:3px; border:2px solid; font-size:13px; }
+  .cat { margin-top:10px; } .cat b { color:var(--muted); text-transform:uppercase; font-size:12px; }
+  .ch { padding-left:14px; color:var(--text); } .ch small { color:var(--muted); }
+  pre { background:var(--bg); padding:10px; border-radius:6px; max-height:300px; overflow:auto; white-space:pre-wrap; }
+  .hidden { display:none; } label { display:flex; gap:6px; align-items:center; margin-top:8px; color:var(--muted); }
+  label input { width:auto; } a { color:#00a8fc; }
+</style>
+</head>
+<body>
+<main>
+  <h1>⚒️ Guildsmith</h1>
+  <p class="sub">Beschreib deinen Server → AI macht einen Plan → du sagst Ja oder änderst → Build.</p>
+
+  <div class="card">
+    <textarea id="prompt" placeholder="z.B. Ein Minecraft SMP Server mit Regeln, Ankündigungen, Support-Tickets, Voice-Kanälen und Rollen Owner, Admin, Mod, VIP, Member"></textarea>
+    <button id="planBtn">✨ Plan erstellen</button>
+  </div>
+
+  <div class="card hidden" id="planCard">
+    <h3 style="margin-top:0">📋 Plan</h3>
+    <p id="summary"></p>
+    <div class="roles" id="roles"></div>
+    <div id="cats"></div>
+    <textarea id="change" placeholder="Was soll geändert werden? z.B. 'Füge eine Giveaway-Kategorie hinzu und mach VIP gold'" style="margin-top:14px;min-height:60px"></textarea>
+    <div class="row">
+      <button class="ghost" id="reviseBtn">✏️ Ändern</button>
+      <button class="ok" id="yesBtn">✅ Ja, passt!</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="buildCard">
+    <h3 style="margin-top:0">🚀 Build</h3>
+    <p>Wähle den Server, auf dem der Bot ist. Noch nicht drauf? <a id="invite" target="_blank">Bot einladen</a> und dann neu laden.</p>
+    <div class="row"><select id="guild"></select><button class="ghost" id="reloadBtn" style="margin-top:0">↻</button></div>
+    <label><input type="checkbox" id="wipe"> Vorher alle bestehenden Kanäle &amp; Rollen löschen</label>
+    <button class="ok" id="buildBtn">🔨 Build</button>
+    <pre id="log" class="hidden"></pre>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let plan = null;
+
+async function post(url, body) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error);
+  return d;
+}
+async function busy(btn, fn) {
+  const t = btn.textContent; btn.disabled = true; btn.textContent = "⏳ ...";
+  try { await fn(); } catch (e) { alert(e.message); }
+  btn.disabled = false; btn.textContent = t;
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+function show(p) {
+  plan = p;
+  $("planCard").classList.remove("hidden");
+  $("summary").textContent = p.summary || "";
+  $("roles").innerHTML = p.roles.map((r) =>
+    `<span style="border-color:${esc(r.color)};color:${esc(r.color)}" title="${esc((r.permissions||[]).join(", "))}">${esc(r.name)}</span>`).join("");
+  $("cats").innerHTML = p.categories.map((c) => `
+    <div class="cat"><b>${esc(c.name)}</b>${c.private_to_roles?.length ? ` <small>🔒 ${esc(c.private_to_roles.join(", "))}</small>` : ""}
+    ${(c.channels||[]).map((ch) => `<div class="ch">${ch.type === "voice" ? "🔊" : "#"} ${esc(ch.name)} ${ch.readonly ? "<small>(nur lesen)</small>" : ""} <small>${esc(ch.topic)}</small></div>`).join("")}
+    </div>`).join("");
+}
+
+$("planBtn").onclick = () => busy($("planBtn"), async () => show(await post("/api/plan", { prompt: $("prompt").value })));
+$("reviseBtn").onclick = () => busy($("reviseBtn"), async () => {
+  show(await post("/api/revise", { prompt: $("prompt").value, plan, change: $("change").value }));
+  $("change").value = "";
+});
+$("yesBtn").onclick = () => { $("buildCard").classList.remove("hidden"); loadGuilds(); $("buildCard").scrollIntoView({ behavior: "smooth" }); };
+$("reloadBtn").onclick = () => loadGuilds();
+
+async function loadGuilds() {
+  try {
+    const gs = await (await fetch("/api/guilds")).json();
+    $("guild").innerHTML = gs.length ? gs.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join("") : "<option value=''>Bot ist auf keinem Server</option>";
+    $("invite").href = (await (await fetch("/api/invite")).json()).url;
+  } catch (e) { alert(e.message); }
+}
+
+$("buildBtn").onclick = () => busy($("buildBtn"), async () => {
+  if (!$("guild").value) throw new Error("Erst den Bot einladen.");
+  if ($("wipe").checked && !confirm("Wirklich ALLE Kanäle und Rollen löschen?")) return;
+  const log = $("log"); log.textContent = ""; log.classList.remove("hidden");
+  const r = await fetch("/api/build", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ guildId: $("guild").value, plan, wipe: $("wipe").checked }) });
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  for (;;) { const { done, value } = await reader.read(); if (done) break; log.textContent += dec.decode(value); log.scrollTop = 1e9; }
+});
+</script>
+</body>
+</html>
