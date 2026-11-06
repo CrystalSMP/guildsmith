@@ -1,2 +1,2 @@
-window.TUNNEL_URL = "https://baghdad-connectors-qualities-distributors.trycloudflare.com";
+window.TUNNEL_URL = "";
 window.SITE = {"state":"normal","ai":true,"title":null,"message":null};
