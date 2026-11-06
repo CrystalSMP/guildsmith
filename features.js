@@ -202,7 +202,7 @@ async function endGiveaway(gid, gw) {
 }
 
 // ---------- API ----------
-export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord }) {
+export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord, hasV2 }) {
   const access = async (req, res) => {
     const g = (await userGuilds(req.sess).catch(() => [])).find((x) => x.id === req.params.id);
     if (!g || !g.installed) { res.status(403).json({ error: "Kein Zugriff auf diesen Server." }); return null; }
@@ -383,6 +383,34 @@ export function registerFeatureRoutes(app, { requireAuth, userGuilds, discord })
       ].map((c) => ({ name: c.name, channels: c.channels.filter((x) => x.type === 0 || x.type === 2 || x.type === 5)
         .map((x) => ({ name: x.name, type: x.type === 2 ? "voice" : "text", topic: x.topic })) })),
     });
+  }));
+
+  // Bot-Profil (nur mit V2 Pre-Access): Name, Avatar, Banner, Bio des Bots auf diesem Server
+  const v2wrap = (fn) => wrap(async (req, res) => {
+    if (!(await hasV2(req.sess.user.id))) return res.status(403).json({ error: "Bot-Profil ist nur mit V2 Pre-Access verfügbar." });
+    await fn(req, res);
+  });
+  app.get(R("botprofile"), requireAuth, v2wrap(async (req, res) => {
+    const m = await discord("GET", `/guilds/${req.params.id}/members/${client?.user?.id || (await discord("GET", "/users/@me")).id}`);
+    const u = m.user;
+    res.json({
+      nick: m.nick || "", bio: m.bio || "", globalName: u.global_name || u.username,
+      avatar: m.avatar ? `https://cdn.discordapp.com/guilds/${req.params.id}/users/${u.id}/avatars/${m.avatar}.png?size=128` : (u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=128` : null),
+      banner: m.banner ? `https://cdn.discordapp.com/guilds/${req.params.id}/users/${u.id}/banners/${m.banner}.png?size=480` : null,
+    });
+  }));
+  app.patch(R("botprofile"), requireAuth, v2wrap(async (req, res) => {
+    const body = {};
+    if ("nick" in req.body) body.nick = req.body.nick || null;
+    if ("bio" in req.body) body.bio = req.body.bio || null;
+    for (const k of ["avatar", "banner"]) if (k in req.body) {
+      const v = req.body[k];
+      if (v && !/^data:image\/(png|jpeg|gif|webp);base64,/.test(v)) return res.status(400).json({ error: "Bild muss PNG, JPG, GIF oder WEBP sein." });
+      if (v && v.length > 11_000_000) return res.status(400).json({ error: "Bild ist zu groß (max. 8 MB)." });
+      body[k] = v || null;
+    }
+    await discord("PATCH", `/guilds/${req.params.id}/members/@me`, body);
+    res.json({ ok: true });
   }));
 
   // Server-Einstellungen

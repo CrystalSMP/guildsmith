@@ -219,6 +219,35 @@
       })));
     },
 
+    // ---------- Bot-Profil (V2) ----------
+    async botprofile(el) {
+      const b = await api("botprofile");
+      let avatar, banner; // undefined = unverändert, "" = entfernen, data-URL = neu
+      el.innerHTML = head("🤖", "Bot-Profil", "So sieht Guildsmith auf <b>diesem</b> Server aus. <span class='v2tag'>V2 PRE-ACCESS</span>") + `<div class="two">` + card("Profil", `
+        ${field("Anzeigename auf diesem Server", `<input id="bNick" maxlength="32" placeholder="${esc(b.globalName)}" value="${esc(b.nick)}">`, "Leer lassen = normaler Name")}
+        ${field("Über mich", `<textarea id="bBio" rows="3" maxlength="190" placeholder="z.B. Dein Helfer für Tickets & mehr">${esc(b.bio)}</textarea>`)}
+        ${field("Avatar", `<input type="file" id="bAva" accept="image/png,image/jpeg,image/gif,image/webp"><button class="ghost sm2" id="bAvaDel" style="margin-top:6px">Avatar zurücksetzen</button>`)}
+        ${field("Banner", `<input type="file" id="bBan" accept="image/png,image/jpeg,image/gif,image/webp"><button class="ghost sm2" id="bBanDel" style="margin-top:6px">Banner entfernen</button>`)}
+        <div class="factions"><button class="white" id="bSave">Speichern</button></div>`) + card("Vorschau", `
+        <div class="bpre"><div class="bban" id="pBan" style="${b.banner ? `background-image:url(${b.banner})` : ""}"></div>
+          <img class="bava" id="pAva" src="${esc(b.avatar || "logo.png")}">
+          <div class="bbody"><b id="pNick">${esc(b.nick || b.globalName)}</b> <span class="badge beta">APP</span><p id="pBio">${esc(b.bio || "Kein „Über mich“")}</p></div></div>`) + `</div>`;
+      const read = (f) => new Promise((ok, no) => { if (f.size > 8e6) return no(new Error("Bild ist zu groß (max. 8 MB).")); const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
+      $("bNick").oninput = () => ($("pNick").textContent = val("bNick") || b.globalName);
+      $("bBio").oninput = () => ($("pBio").textContent = val("bBio") || "Kein „Über mich“");
+      $("bAva").onchange = async (e) => { try { avatar = await read(e.target.files[0]); $("pAva").src = avatar; } catch (x) { toast(x.message, true); } };
+      $("bBan").onchange = async (e) => { try { banner = await read(e.target.files[0]); $("pBan").style.backgroundImage = `url(${banner})`; } catch (x) { toast(x.message, true); } };
+      $("bAvaDel").onclick = () => { avatar = ""; $("pAva").src = "logo.png"; };
+      $("bBanDel").onclick = () => { banner = ""; $("pBan").style.backgroundImage = ""; };
+      $("bSave").onclick = (e) => run(e.target, async () => {
+        const body = { nick: val("bNick"), bio: val("bBio") };
+        if (avatar !== undefined) body.avatar = avatar;
+        if (banner !== undefined) body.banner = banner;
+        await api("botprofile", { method: "PATCH", body });
+        avatar = banner = undefined;
+      }, "Bot-Profil gespeichert ✓");
+    },
+
     // ---------- Vorlagen ----------
     async templates(el) {
       el.innerHTML = head("🧩", "Vorlagen", "Fertige Server-Pläne – mit einem Klick in den AI Builder laden und anpassen.")

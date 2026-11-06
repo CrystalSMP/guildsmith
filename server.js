@@ -5,7 +5,7 @@ import { startBot } from "./bot.js";
 import { registerFeatureRoutes } from "./features.js";
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "12mb" }));
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "https://crystalsmp.github.io").split(",");
 app.use((req, res, next) => {
   if (ORIGINS.includes(req.headers.origin)) {
@@ -86,7 +86,8 @@ const list = (v, d) => (v || d).split(",").map((m) => m.trim()).filter(Boolean);
 const ENGINES = {
   fast: { label: "Guildsmith V1 Fast", desc: "Schnell, für die meisten Server",
     models: list(process.env.FAST_MODELS, "gemini-3.5-flash-lite,gemini-3.6-flash"), thinking: "minimal" },
-  pro: { label: "Guildsmith V1 Pro", desc: "Gründlicher, für große Server", locked: true },
+  pro: { label: "Guildsmith V1 Pro", desc: "Gründlicher, für große Server", v2only: true,
+    models: list(process.env.PRO_MODELS, "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite"), thinking: process.env.PRO_THINKING ?? "medium" },
   v2: { label: "Guildsmith V2 Beta", desc: "Neueste Engine · 1 Server pro Tag", beta: true, daily: 1,
     models: list(process.env.V2_MODELS, "gemini-3.6-flash,gemini-3.8-flash,gemini-3.5-flash-lite"), thinking: process.env.V2_THINKING ?? "low" },
 };
@@ -225,27 +226,49 @@ async function streamPlan(res, messages, engine) {
   res.end();
 }
 
-function pickEngine(req, res) {
+// ---------- V2 Pre-Access: Rolle im Guildsmith-Discord ----------
+const V2_GUILD = process.env.V2_GUILD_ID;
+const V2_ROLE = process.env.V2_ROLE_NAME || "V2 Pre-Access";
+const v2Cache = new Map(); // userId -> { ok, at }
+let v2RoleId = null;
+async function hasV2(uid) {
+  if (!V2_GUILD) return false;
+  const c = v2Cache.get(uid);
+  if (c && Date.now() - c.at < 60000) return c.ok;
+  let ok = false;
+  try {
+    if (!v2RoleId) v2RoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === V2_ROLE)?.id;
+    const m = await discord("GET", `/guilds/${V2_GUILD}/members/${uid}`);
+    ok = !!v2RoleId && m.roles.includes(v2RoleId);
+  } catch {} // nicht auf dem Server = kein Zugang
+  v2Cache.set(uid, { ok, at: Date.now() });
+  return ok;
+}
+
+async function pickEngine(req, res) {
   const key = req.body.engine || "fast";
   const e = ENGINES[key];
   if (!e) { res.status(400).json({ error: "Unbekanntes Modell." }); return null; }
-  if (e.locked) { res.status(403).json({ error: `${e.label} ist noch gesperrt.` }); return null; }
-  return { key, e };
+  const v2 = await hasV2(req.sess.user.id);
+  if (e.v2only && !v2) { res.status(403).json({ error: `${e.label} ist nur mit V2 Pre-Access verfügbar.` }); return null; }
+  return { key, e, v2 };
 }
 
-app.get("/api/engines", requireAuth, (req, res) => {
+app.get("/api/engines", requireAuth, async (req, res) => {
+  const v2 = await hasV2(req.sess.user.id);
   res.json(Object.entries(ENGINES).map(([key, e]) => ({
-    key, label: e.label, desc: e.desc, locked: !!e.locked, beta: !!e.beta,
-    left: e.daily ? Math.max(0, e.daily - usedToday(req.sess.user.id, key)) : null,
+    key, label: e.label, desc: v2 && e.daily ? "Neueste Engine · unbegrenzt mit Pre-Access" : e.desc,
+    locked: !!e.v2only && !v2, beta: !!e.beta, pro: !!e.v2only,
+    left: e.daily && !v2 ? Math.max(0, e.daily - usedToday(req.sess.user.id, key)) : null,
   })));
 });
 
 // Neuer Plan aus Prompt
-app.post("/api/plan", (req, res) => {
-  const p = pickEngine(req, res);
+app.post("/api/plan", async (req, res) => {
+  const p = await pickEngine(req, res);
   if (!p) return;
   const uid = req.sess.user.id;
-  if (p.e.daily) {
+  if (p.e.daily && !p.v2) {
     if (usedToday(uid, p.key) >= p.e.daily) return res.status(429).json({ error: `Mit ${p.e.label} kannst du nur ${p.e.daily} Server pro Tag erstellen. Morgen geht's wieder – oder nimm V1 Fast.` });
     addUse(uid, p.key);
   }
@@ -253,8 +276,8 @@ app.post("/api/plan", (req, res) => {
 });
 
 // Plan ändern (zählt nicht zum Tageslimit)
-app.post("/api/revise", (req, res) => {
-  const p = pickEngine(req, res);
+app.post("/api/revise", async (req, res) => {
+  const p = await pickEngine(req, res);
   if (!p) return;
   const { prompt, plan, change } = req.body;
   streamPlan(res, [
@@ -347,9 +370,9 @@ function requireAuth(req, res, next) {
 }
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
-app.get("/api/me", requireAuth, (req, res) => {
+app.get("/api/me", requireAuth, async (req, res) => {
   const u = req.sess.user;
-  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null });
+  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id) });
 });
 
 const MANAGE = (1n << 3n) | (1n << 5n); // ADMINISTRATOR oder MANAGE_GUILD
@@ -489,7 +512,7 @@ app.post("/api/build", requireAuth, async (req, res) => {
 });
 
 const port = process.env.PORT || 3001;
-registerFeatureRoutes(app, { requireAuth, userGuilds, discord });
+registerFeatureRoutes(app, { requireAuth, userGuilds, discord, hasV2 });
 if (!process.env.NO_BOT) startBot(TOKEN);
 app.listen(port, () => console.log(`Läuft auf http://localhost:${port}`)).on("error", (e) => {
   if (e.code === "EADDRINUSE") console.log(`❌ Port ${port} ist schon belegt. Läuft Guildsmith schon in einem anderen Fenster? Dann das zuerst schließen – oder in der .env einen anderen PORT eintragen.`);
