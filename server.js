@@ -63,10 +63,28 @@ function parseJson(text) {
   return JSON.parse(m[0]);
 }
 
-async function ask(messages) {
+// Fortschritt aus dem halb fertigen JSON lesen (was plant die KI gerade?)
+function progressOf(text) {
+  const ci = text.indexOf('"categories"');
+  const rolesPart = ci === -1 ? text : text.slice(0, ci);
+  const catPart = ci === -1 ? "" : text.slice(ci);
+  const names = (t) => [...t.matchAll(/"name"\s*:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+  const roles = names(rolesPart);
+  const channels = (catPart.match(/"type"\s*:/g) || []).length;
+  const catNames = names(catPart);
+  const categories = Math.max(0, catNames.length - channels);
+  let step = "understand", detail = "";
+  if (text.includes('"summary"')) step = "summary";
+  if (text.includes('"roles"')) { step = "roles"; detail = roles.at(-1) || ""; }
+  if (ci !== -1) { step = "channels"; detail = catNames.at(-1) || ""; }
+  return { step, detail, roles: roles.length, categories, channels };
+}
+
+async function ask(messages, onProgress = () => {}) {
   const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  onProgress({ step: "understand" });
   const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
@@ -80,9 +98,28 @@ async function ask(messages) {
       }),
     }
   );
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error?.message || "KI-Fehler");
-  return parseJson(d.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "");
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    throw new Error(d.error?.message || d[0]?.error?.message || "KI-Fehler");
+  }
+  let text = "", buf = "";
+  const dec = new TextDecoder();
+  for await (const chunk of r.body) {
+    buf += dec.decode(chunk, { stream: true });
+    let i;
+    while ((i = buf.indexOf("\n")) !== -1) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 1);
+      if (!line.startsWith("data:")) continue;
+      try {
+        const d = JSON.parse(line.slice(5));
+        text += d.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text || "").join("") || "";
+        onProgress(progressOf(text));
+      } catch {}
+    }
+  }
+  onProgress({ step: "check" });
+  return parseJson(text);
 }
 
 app.get("/api/mode", (_req, res) => res.json(getMode()));
@@ -92,29 +129,35 @@ app.use(["/api/plan", "/api/revise"], requireAuth, (_req, res, next) => {
   next();
 });
 
-// Neuer Plan aus Prompt
-app.post("/api/plan", async (req, res) => {
+// Antwort als NDJSON streamen: {type:"progress",...} … {type:"done",plan} oder {type:"error"}
+async function streamPlan(res, messages) {
+  res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache");
+  const send = (o) => res.write(JSON.stringify(o) + "\n");
+  let last = "";
   try {
-    res.json(await ask([{ role: "user", content: req.body.prompt }]));
+    const plan = await ask(messages, (p) => {
+      const k = JSON.stringify(p);
+      if (k !== last) { last = k; send({ type: "progress", ...p }); }
+    });
+    send({ type: "done", plan });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    send({ type: "error", error: e.message });
   }
-});
+  res.end();
+}
+
+// Neuer Plan aus Prompt
+app.post("/api/plan", (req, res) => streamPlan(res, [{ role: "user", content: req.body.prompt }]));
 
 // Plan ändern
-app.post("/api/revise", async (req, res) => {
-  try {
-    const { prompt, plan, change } = req.body;
-    res.json(
-      await ask([
-        { role: "user", content: prompt },
-        { role: "assistant", content: JSON.stringify(plan) },
-        { role: "user", content: `Ändere den Plan: ${change}\nGib den kompletten neuen Plan als JSON zurück.` },
-      ])
-    );
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+app.post("/api/revise", (req, res) => {
+  const { prompt, plan, change } = req.body;
+  streamPlan(res, [
+    { role: "user", content: prompt },
+    { role: "assistant", content: JSON.stringify(plan) },
+    { role: "user", content: `Ändere den Plan: ${change}\nGib den kompletten neuen Plan als JSON zurück.` },
+  ]);
 });
 
 async function discord(method, path, body) {
