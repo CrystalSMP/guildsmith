@@ -1,2 +1,2 @@
-window.TUNNEL_URL = "";
-window.SITE = {"state":"maintenance","ai":false,"title":"🛠️ Wartung","message":"Guildsmith wird gerade gewartet. Schau gleich nochmal vorbei!"};
+window.TUNNEL_URL = "https://divisions-lifestyle-missed-referring.trycloudflare.com";
+window.SITE = {"state":"normal","ai":true,"title":null,"message":null};
