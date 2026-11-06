@@ -250,10 +250,10 @@ const V2_GUILD = process.env.V2_GUILD_ID;
 const V2_ROLE = process.env.V2_ROLE_NAME || "V2 Pre-Access";
 const v2Cache = new Map(); // userId -> { ok, at }
 let v2RoleId = null;
-async function hasV2(uid) {
+async function hasV2(uid, fresh) {
   if (!V2_GUILD) return false;
   const c = v2Cache.get(uid);
-  if (c && Date.now() - c.at < 60000) return c.ok;
+  if (!fresh && c && Date.now() - c.at < 60000) return c.ok;
   let ok = false;
   try {
     if (!v2RoleId) v2RoleId = (await discord("GET", `/guilds/${V2_GUILD}/roles`)).find((r) => r.name === V2_ROLE)?.id;
@@ -391,7 +391,7 @@ function requireAuth(req, res, next) {
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.get("/api/me", requireAuth, async (req, res) => {
   const u = req.sess.user;
-  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id) });
+  res.json({ id: u.id, name: u.global_name || u.username, avatar: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64` : null, v2: await hasV2(u.id, req.query.fresh === "1") });
 });
 
 const MANAGE = (1n << 3n) | (1n << 5n); // ADMINISTRATOR oder MANAGE_GUILD

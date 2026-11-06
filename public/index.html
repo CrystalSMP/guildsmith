@@ -669,7 +669,16 @@ function showPage(page, label) {
   if (page === "overview") loadOverview();
   if (page === "builder") setTimeout(() => $("input").focus(), 50);
 }
-document.querySelectorAll(".nav").forEach((n) => (n.onclick = () => showPage(n.dataset.page, n.dataset.label)));
+document.querySelectorAll(".nav").forEach((n) => (n.onclick = async () => {
+  // Gesperrtes Bot-Profil: live nachprüfen, ob die V2-Rolle inzwischen da ist
+  if (n.dataset.label === "Bot-Profil" && n.dataset.page === "locked") {
+    try {
+      const me = await (await fetch("/api/me?fresh=1")).json();
+      if (me.v2) { window.ME = me; n.dataset.page = "f:botprofile"; n.classList.remove("locked"); n.querySelector(".v2tag").textContent = "V2 ✓"; loadEngines(); }
+    } catch {}
+  }
+  showPage(n.dataset.page, n.dataset.label);
+}));
 document.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => showPage(b.dataset.go)));
 $("oRefresh").onclick = () => loadOverview();
 
